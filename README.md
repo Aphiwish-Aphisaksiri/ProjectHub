@@ -1,3 +1,12 @@
+Color Scheme for this web app is
+    Primary: #061E29
+    Secondary: #1D546D
+    Tertiary: #5F9598
+    Quaternary: #F3F4F4
+
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
