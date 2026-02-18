@@ -1,0 +1,128 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String?
+  avatarUrl  String?
+  role       UserRole  @default(USER)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // relations
+  teams      TeamMember[]
+  projects   Project[] @relation("OwnerProjects")
+  notes      Note[]
+  tasks      Task[]
+  messages   ChatMessage[]
+}
+
+model Team {
+  id        String      @id @default(cuid())
+  name      String
+  createdAt DateTime    @default(now())
+  members   TeamMember[]
+  projects  Project[]
+}
+
+model TeamMember {
+  id     String @id @default(cuid())
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+  role   TeamRole @default(MEMBER)
+
+  @@unique([teamId, userId])
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  slug        String    @unique
+  ownerId     String?
+  owner       User?     @relation("OwnerProjects", fields: [ownerId], references: [id])
+  teamId      String?
+  team        Team?     @relation(fields: [teamId], references: [id])
+  notes       Note[]
+  tasks       Task[]
+  files       File[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Int        @default(2)
+  project     Project?   @relation(fields: [projectId], references: [id])
+  projectId   String?
+  assignee    User?      @relation(fields: [assigneeId], references: [id])
+  assigneeId  String?
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
+  createdAt DateTime @default(now())
+}
+
+model File {
+  id         String   @id @default(cuid())
+  filename   String
+  url        String
+  mimeType   String?
+  size       Int?
+  project    Project? @relation(fields: [projectId], references: [id])
+  projectId  String?
+  uploadedBy User?    @relation(fields: [uploadedById], references: [id])
+  uploadedById String?
+  createdAt  DateTime @default(now())
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum TeamRole {
+  MEMBER
+  ADMIN
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
