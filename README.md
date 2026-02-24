@@ -3,6 +3,10 @@ Color Scheme for this web app is
     Secondary: #1D546D
     Tertiary: #5F9598
     Quaternary: #F3F4F4
+    White: #F0F6FC
+    Light Grey: #BABABA
+    Green: #208F0A
+    Red: #8F0A0A
 
 
 
