@@ -1,26 +1,37 @@
-
+"use client";
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="home-container min-h-screen w-full flex-col flex items-center justify-center bg-primary text-white">
+    <main className="home-container min-h-screen w-full flex-col flex items-center justify-center bg-offblack text-offwhite gap-12">
       {/* Text section */}
-      <div className="text-content items-center justify-center flex-col flex">
-        <h1 className="header">
-          Start planning your personal projects!
+      <div className="text-content w-full items-center justify-center flex-col flex gap-4">
+        <h1 className="header w-full text-[64px] font-bold text-center">
+          Start planning your personal projects
         </h1>
-        <p className="subheader">
+        <p className="subheader text-[24px] text-center text-offwhite/55">
           An experimental app to help you plan and execute your dream projects
         </p>
       </div>
 
       {/* Button section */}
-      <div className="button-group">
-        <button className="btn-projects">
+      <div className="button-group gap-3 flex items-center justify-center">
+        
+        {/* Project button */}
+        <Link 
+          href="/projects"
+          className="btn-projects bg-offwhite text-offblack px-4 py-3 rounded-[12px] text-[18px]"
+        >
           Create Project
-        </button>
-        <button className="btn-chat">
+        </Link>
+
+        {/* Chat button */}
+        <Link 
+          href="/chat"
+          className="btn-chat border border-offwhite px-4 py-3 rounded-[12px] text-[18px]"
+        >
           Ask an AI assistant
-        </button>
+        </Link>
       </div>
     </main>
   );
