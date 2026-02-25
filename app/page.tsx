@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <main className="home-container min-h-screen w-full flex-col flex items-center justify-center bg-offblack text-offwhite gap-12">
+    <main className="home-container min-h-full w-full flex-col flex items-center justify-center bg-offblack text-offwhite gap-12">
       {/* Text section */}
       <div className="text-content w-full items-center justify-center flex-col flex gap-4">
         <h1 className="header w-full text-[64px] font-bold text-center">
