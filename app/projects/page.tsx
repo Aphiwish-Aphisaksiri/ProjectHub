@@ -86,6 +86,60 @@ export default function Projects() {
             </div>
 
           </div>
+
+
+          {/* Configuration */}
+          <div className="configuration flex flex-col gap-2.5 h-full w-full items-center justify-start">
+            <h1 className="txt-configuration w-full text-[24px] text-offwhite text-left font-bold">
+              Configuration
+            </h1>
+
+            {/* Visibility */}
+            <div className="visibility flex flex-row justify-between w-full pl-8">
+              {/* Visibility text and description */}
+              <div className="visibility-text flex flex-col">
+                <label className="text-offwhite text-[20px] font-bold w-fit h-fit">
+                  Visibility
+                </label>
+                <p className="text-lightgrey text-[14px] font-bold">
+                  Choose who can see and work on this project
+                </p>
+              </div>
+
+              {/* Visibility options (dropdown) */}
+              <div className="visibility-options flex flex-col justify-center">
+                <select className="bg-lightgrey/20 text-offwhite hover:bg-lightgrey/10 text-[20px] rounded-md px-4 py-1.25 h-fit w-fit">
+                  <option className="bg-lightgrey/20 text-offblack" value="private">Private</option>
+                  <option className="bg-lightgrey/20 text-offblack" value="public">Public</option>
+                </select>
+              </div>
+
+            </div>
+
+            {/* Add README option */}
+            <div className="add-readme flex flex-row justify-between w-full pl-8">
+              {/* Add README text and description */}
+              <div className="add-readme-text flex flex-col justify-center">
+                <label className="text-offwhite text-[20px] font-bold w-fit h-fit">
+                  Add README
+                </label>
+                <p className="text-lightgrey text-[14px] font-bold">
+                  Create a README file for detailed description
+                </p>
+              </div>
+              {/* Add README toggle */}
+              <div className="add-readme-toggle flex flex-col justify-center">
+                <input type="checkbox" className="w-6 h-6 accent-offwhite hover:accent-offwhite/50" />
+              </div>
+            </div>
+
+            {/* Confirmation button */}
+            <div className="confirmation-button w-full flex justify-end mt-4">
+              <button className="bg-green text-offwhite px-6 py-2 rounded-md font-bold hover:bg-green/50 transition-colors duration-200">
+                Create New Project
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </main>
