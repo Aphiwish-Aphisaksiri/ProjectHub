@@ -39,7 +39,6 @@ export default function Projects() {
             <h2 className="Subheader h-fit w-fit text-left text-[16px] text-lightgrey font-bold">
               The project can contain plans, notes, tasks. Have a friends to work on this project? you can add them too
             </h2>
-
           </div>
 
 
@@ -65,6 +64,24 @@ export default function Projects() {
               {/* Project name description line */}
               <p className="text-lightgrey text-[14px] font-bold">
                 The project name should be unique and memorable
+              </p>
+            </div>
+
+            {/* Project description */}
+            <div className="Project-description flex flex-col gap-1.25 pl-8 w-full">
+              {/* Project description input line */}
+              <div className="Project-description-input flex flex-col gap-2.5 items-left justify-center">
+                <label className="text-offwhite text-[20px] font-bold whitespace-nowrap w-fit h-fit">
+                  Description
+                </label>
+                <textarea
+                  className="bg-primary text-lightgrey text-left border border-lightgrey rounded-md px-2 py-2 min-h-37.5 w-full"
+                  placeholder="My awesome project description"
+                />
+              </div>
+              {/* Project description description line */}
+              <p className="text-lightgrey text-[14px] font-bold">
+                Maximum 250 characters
               </p>
             </div>
 
