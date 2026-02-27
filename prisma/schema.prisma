@@ -11,9 +11,32 @@ model Project {
   id          String    @id @default(cuid())
   title       String
   description String?
-  ownerId     String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  visibility  ProjectVisibility @default(PRIVATE)
+  addReadMe   Boolean   @default(false)
+  // TODO: Add slug to make URL more user-friendly
+
+  // Relations
+  owner       User?     @relation(fields: [ownerId], references: [id])
+  ownerId     String?
+}
+
+model User {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String?
+  avatarUrl  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Collections
+  projects   Project[]
+}
+
+enum ProjectVisibility {
+  PRIVATE
+  PUBLIC
 }
 
 // model User {
