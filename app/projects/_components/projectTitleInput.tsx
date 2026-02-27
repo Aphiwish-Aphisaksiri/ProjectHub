@@ -1,27 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { checkIfProjectTitleExists } from "../action";
 
 export default function ProjectTitleInput() {
     const [title, setTitle] = useState("");
     const [isDuplicate, setIsDuplicate] = useState(false);
+    const [isChecking, setIsChecking] = useState(false);
 
-    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newTitle = e.target.value;
-        setTitle(newTitle);
+    useEffect(() => {
+        // 1. Don't ping the DB for empty strings or very short names
+        if (!title || title.length < 2) {
+            setIsDuplicate(false);
+            return;
+        }
 
-        // Call server action
-        const exists = await checkIfProjectTitleExists(newTitle);
-        setIsDuplicate(exists);
+        // 2. Start the timer
+        const timer = setTimeout(async () => {
+            setIsChecking(true);
+            try {
+                const exists = await checkIfProjectTitleExists(title);
+                setIsDuplicate(exists);
+            } catch (error) {
+                console.error("Failed to check title:", error);
+            } finally {
+                setIsChecking(false);
+            }
+        }, 500); // 500ms delay
+
+        // 3. Cleanup: If the user types again, this "kills" the previous timer
+        return () => clearTimeout(timer);
+    }, [title]); // This effect runs every time 'title' changes
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTitle(e.target.value);
     };
+
     return (
-        <input
-            type="text"
-            className={`bg-primary text-lightgrey text-center border ${isDuplicate ? "border-red-500" : "border-lightgrey"} rounded-md px-4 py-1.25 h-fit w-full`}
-            placeholder="My-awesome-project"
-            value={title}
-            onChange={handleChange}
-        />
+        <div className="w-full flex flex-row relative">
+            <input
+                type="text"
+                className={`bg-primary text-lightgrey text-center border ${
+                    isDuplicate ? "border-red" : "border-lightgrey"
+                } rounded-md px-4 py-1.25 h-fit w-full focus:outline-none transition-colors`}
+                placeholder="My-awesome-project"
+                value={title}
+                onChange={handleChange}
+            />
+            
+            {/* Helpful UI feedback */}
+            {isChecking && (
+                <p className="text-[10px] text-lightgrey absolute right-2 top-1/2 -translate-y-1/2">
+                    Checking...
+                </p>
+            )}
+            
+            {isDuplicate && (
+                <p className="text-red text-xs mt-1 text-center">
+                    This project name is already taken!
+                </p>
+            )}
+        </div>
     );
 }
