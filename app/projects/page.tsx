@@ -1,10 +1,7 @@
 import { GoHome, GoGear } from "react-icons/go";
 import NewProjectForm from "./_components/newProjectForm";
-import { ProjectVisibility } from '@prisma/client'
 
 export default function ProjectsPage() {
-
-  const visibilityOptions = Object.values(ProjectVisibility);
 
   return (
     <main className="bg-primary flex flex-row h-full">
@@ -33,7 +30,7 @@ export default function ProjectsPage() {
 
       {/* Main content */}
       <div className="projects-content h-full w-full flex flex-col gap-2.5 px-16 py-8 items-center justify-start">
-        <NewProjectForm visibilityOptions={visibilityOptions} />
+        <NewProjectForm />
       </div>
     </main>
     );

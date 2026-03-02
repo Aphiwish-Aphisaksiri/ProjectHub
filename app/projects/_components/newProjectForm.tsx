@@ -5,13 +5,61 @@
     - Add README option (boolean toggle)
     - Create project button
 */
+'use client';
 
 import ProjectTitleInput from "./projectTitleInput";
-import CreateProjectButton from "./createProjectButton";
+import { useState } from 'react';
+import { createProject } from "../action";
+import { ProjectVisibility } from '@prisma/client'
 
-export default function NewProjectForm({ visibilityOptions}: { visibilityOptions: string[]}) {
+export default function NewProjectForm() {
+    const visibilityOptions = Object.values(ProjectVisibility);
+
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [visibility, setVisibility] = useState<ProjectVisibility>(visibilityOptions[0]);
+    const [addReadMe, setAddReadMe] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const [isDuplicate, setIsDuplicate] = useState(false);
+
+    type CreateResult = {
+        type: "success" | "error";
+        message: string;
+    } | null;
+
+    const [result, setResult] = useState<CreateResult>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await createProject({
+                title,
+                description,
+                visibility,
+                addReadMe,
+            });
+            setResult({
+                type: "success",
+                message: "Project created successfully!"
+            });
+        // Handle error
+        }
+        catch (err) {
+            console.error("Failed to create project:", err);
+            setResult({
+                type: "error",
+                message: err instanceof Error ? err.message : 'Failed to create project.'
+            });
+        }
+        finally {
+        setLoading(false);
+        }
+    };
+
     return (
-        <div className="New-project h-fit w-fit flex flex-col gap-11 items-center justify-center">
+        <form onSubmit={handleSubmit} className="New-project h-fit w-fit flex flex-col gap-11 items-center justify-center">
             {/* Heading */}
             <div className="Heading h-fit w-fit flex flex-col gap-4 items-left justify-start">
             <h1 className="Header h-fit w-fit text-[32px] text-left text-offwhite font-bold">
@@ -36,7 +84,7 @@ export default function NewProjectForm({ visibilityOptions}: { visibilityOptions
                 <label className="text-offwhite text-[20px] font-bold whitespace-nowrap w-fit h-fit">
                     Project name:
                 </label>
-                <ProjectTitleInput />
+                <ProjectTitleInput title={title} setTitle={setTitle} isDuplicate={isDuplicate} setIsDuplicate={setIsDuplicate} />
                 </div>
                 {/* Project name description line */}
                 <p className="text-lightgrey text-[14px] font-bold">
@@ -54,6 +102,7 @@ export default function NewProjectForm({ visibilityOptions}: { visibilityOptions
                 <textarea
                     className="bg-primary text-lightgrey text-left border border-lightgrey rounded-md px-2 py-2 min-h-37.5 w-full"
                     placeholder="My awesome project description"
+                    onBlur={e => setDescription(e.target.value)}
                 />
                 </div>
                 {/* Project description description line */}
@@ -85,9 +134,17 @@ export default function NewProjectForm({ visibilityOptions}: { visibilityOptions
 
                 {/* Visibility options (dropdown) */}
                 <div className="visibility-options flex flex-col justify-center">
-                <select className="bg-lightgrey/20 text-offwhite hover:bg-lightgrey/10 text-[20px] rounded-md px-4 py-1.25 h-fit w-fit">
+                <select
+                    value={visibility}
+                    className="bg-lightgrey/20 text-offwhite hover:bg-lightgrey/10 text-[20px] rounded-md px-4 py-1.25 h-fit w-fit"
+                    onChange={e => setVisibility(e.target.value as ProjectVisibility)}
+                >
                     {visibilityOptions.map((option) => (
-                        <option key={option} className="bg-lightgrey/20 text-offblack" value={option}>
+                        <option
+                            key={option}
+                            className="bg-lightgrey/20 text-offblack"
+                            value={option}
+                        >
                             {option.charAt(0) + option.slice(1).toLowerCase()}
                         </option>
                     ))}
@@ -109,15 +166,31 @@ export default function NewProjectForm({ visibilityOptions}: { visibilityOptions
                 </div>
                 {/* Add README toggle */}
                 <div className="add-readme-toggle flex flex-col justify-center">
-                <input type="checkbox" className="w-6 h-6 accent-offwhite hover:accent-offwhite/50" />
+                    <input type="checkbox" className="w-6 h-6 accent-offwhite hover:accent-offwhite/50" onBlur={e => setAddReadMe(e.target.checked)} />
                 </div>
             </div>
 
             {/* Confirmation button */}
-            <div className="confirmation-button w-full flex justify-end mt-4">
-                <CreateProjectButton />
+            <div className="confirmation-button w-full flex flex-col items-end justify-center mt-4 ">
+                <button type="submit"
+                        className={`text-offwhite px-6 py-2 rounded-md font-bold transition-colors duration-200 h-fit w-fit
+                            ${isDuplicate ? "bg-red hover:bg-red/50" : "bg-green hover:bg-green/50"}`}
+                        disabled={loading || isDuplicate}
+                >
+                    {isDuplicate ? "Title is not valid" :loading ? "Creating Project..." : "Create New Project"}
+                </button>
+                {/* Result message */}
+                {result && (
+                    <p
+                        className={`mt-2 text-sm font-bold ${
+                            result.type === "success" ? "text-green" : "text-red"
+                        }`}
+                    >
+                        {result.message}
+                    </p>
+                )}
             </div>
         </div>
-    </div>
+    </form>
     );
 }

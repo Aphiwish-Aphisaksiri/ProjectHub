@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react"; // Added useEffect
 import { checkIfProjectTitleExists } from "../action";
 
-export default function ProjectTitleInput() {
-    const [title, setTitle] = useState("");
-    const [isDuplicate, setIsDuplicate] = useState(false);
+export default function ProjectTitleInput({ title, setTitle, isDuplicate, setIsDuplicate}: { title: string; setTitle: (value: string) => void; isDuplicate: boolean; setIsDuplicate: (value: boolean) => void }) {
     const [isChecking, setIsChecking] = useState(false);
 
     useEffect(() => {
@@ -33,7 +31,7 @@ export default function ProjectTitleInput() {
     }, [title]); // This effect runs every time 'title' changes
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTitle(e.target.value);
+        setTitle(e.target.value); // Update the title state on every keystroke triggering the dependency array in useEffect ^^^
     };
 
     return (
