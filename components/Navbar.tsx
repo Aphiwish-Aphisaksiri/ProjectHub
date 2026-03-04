@@ -61,8 +61,8 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex items-center gap-3">
               <button className="px-3 py-2 text-sm rounded-md hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">New</button>
-              <Link href="/profile" className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
-                <span className="sr-only">Open profile</span>
+              <Link href="/user" className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
+                <span className="sr-only">Open user profile</span>
                 <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-sm">AA</div>
               </Link>
             </div>
@@ -106,8 +106,8 @@ export default function Navbar() {
               );
             })}
 
-            <Link href="/profile" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50">
-              Profile
+            <Link href="/user" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50">
+              User
             </Link>
           </div>
         </div>
