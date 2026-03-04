@@ -32,7 +32,7 @@ export const authOptions: AuthOptions = {
             }
         }),
     ],
-    session: { strategy: "database" as SessionStrategy }, // keeps sessions in DB via adapter
+    session: { strategy: "jwt" as SessionStrategy }, // keeps sessions in DB via adapter
     // Callback runs every time a session is checked/created. We can add user id to session here for easy access on client/server.
     callbacks: {
         // By default, NextAuth only includes email and name in session.user. We want to add id as well for easier access.
