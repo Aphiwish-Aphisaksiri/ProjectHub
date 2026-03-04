@@ -8,6 +8,27 @@ export async function checkIfProjectTitleExists(title: string) {
     return !!project;
 }
 
+export type ProjectListItem = {
+    id: string;
+    title: string;
+    createdAt: Date;
+}
+
+export async function getProjectsTitle(userId: string | null) {
+    const { take = 50, skip = 0 } = {}; // Pagination parameters, can be extended to accept from the client
+    return await prisma.project.findMany({
+        where: { ownerId: userId },
+        orderBy: { createdAt: "desc" },
+        take,
+        skip,
+        select: {
+            id: true,
+            title: true,
+            createdAt: true,
+        }
+    });
+}
+
 export async function createProject({ title, description, visibility, addReadMe }: {
     title: string;
     description: string;

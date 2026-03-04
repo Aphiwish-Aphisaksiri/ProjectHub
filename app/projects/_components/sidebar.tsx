@@ -1,0 +1,53 @@
+"use client";
+
+import { GoHome, GoGear } from "react-icons/go";
+import { LuNotebookPen } from "react-icons/lu";
+import { getProjectsTitle } from "../action";
+import { useEffect, useState } from "react";
+
+export default function Sidebar() {
+    const [projectsList, setProjectsList] = useState<{ id: string; title: string }[]>([]);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            const userId = null; // Replace with actual user ID
+            const projectsList = await getProjectsTitle(userId);
+            setProjectsList(projectsList);
+        };
+
+        fetchProjects();
+    }, []);
+
+    return (
+        <div className="Sidebar max-md:hidden flex flex-col w-50 h-full px-4 py-8 justify-between bg-secondary">
+
+            {/* Top sidebar */}
+            <div className="Project-list flex flex-col gap-2.5">
+                {/* Main button */}
+                <div className="btn-main flex flex-row items-center justify-left gap-2.5 px-1.25 text-offwhite text-[20px] font-bold">
+                    <GoHome /> Main
+                </div>
+
+                <hr className="line-break border-offwhite border" />
+
+                {/* TODO: Projects list should go here */}
+                <div className="projects flex flex-col gap-2.5">
+                    {projectsList.map((project) => (
+                        <div key={project.id} className="project-item flex flex-row items-center justify-left gap-4 px-1.25 text-offwhite text-[16px]">
+                            <LuNotebookPen /> {project.title}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Bottom sidebar */}
+            <div className="bottom-sidebar flex flex-col gap-2.5">
+                <hr className="line-break border-offwhite border" />
+                <button className="btn-settings flex flex-row items-center justify-left gap-2.5 px-1.25 text-offwhite text-[18px] font-bold">
+                    <GoGear /> Settings
+                </button>
+            </div>
+
+        </div>
+    );
+}
