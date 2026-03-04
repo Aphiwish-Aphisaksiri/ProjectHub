@@ -4,6 +4,7 @@ import { GoHome, GoGear } from "react-icons/go";
 import { LuNotebookPen } from "react-icons/lu";
 import { getProjectsTitle } from "../action";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function Sidebar() {
     const [projectsList, setProjectsList] = useState<{ id: string; title: string }[]>([]);
@@ -30,12 +31,13 @@ export default function Sidebar() {
 
                 <hr className="line-break border-offwhite border" />
 
-                {/* TODO: Projects list should go here */}
+                {/* Project list */}
                 <div className="projects flex flex-col gap-2.5">
+                    {/* TODO: This should be href link */}
                     {projectsList.map((project) => (
-                        <div key={project.id} className="project-item flex flex-row items-center justify-left gap-4 px-1.25 text-offwhite text-[16px]">
+                        <Link key={project.id} href={`/projects/${project.title}`} className="project-item flex flex-row items-center justify-left gap-4 px-1.25 text-offwhite text-[16px]">
                             <LuNotebookPen /> {project.title}
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>
