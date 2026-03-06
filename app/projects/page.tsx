@@ -1,8 +1,6 @@
 import Sidebar from "./_components/sidebar";
 import NewProjectForm from "./_components/newProjectForm";
 
-
-//TODO: Make sidebar a component and make it collapsible for mobile view. Also, add functionality to the project list and settings button.
 export default function ProjectsPage() {
 
   return (

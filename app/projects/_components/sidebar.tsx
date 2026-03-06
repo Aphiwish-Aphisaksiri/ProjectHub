@@ -6,6 +6,8 @@ import { getProjectsTitle } from "../action";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+//TODO: Make sidebar a component and make it collapsible for mobile view. Also, add functionality to the project list and settings button.
+
 export default function Sidebar() {
     const [projectsList, setProjectsList] = useState<{ id: string; title: string }[]>([]);
 

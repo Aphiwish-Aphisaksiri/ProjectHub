@@ -4,9 +4,6 @@
     - Visibility options (currently PRIVATE and PUBLIC (can be set in db schema))
     - Add README option (boolean toggle)
     - Create project button
-
-    TODO: Check for the user that logged in, if the user is not logged in, show a button to redirect to the login page.
-    If the user is logged in, show the form and create the project with the current user's ID as the ownerId.
 */
 'use client';
 

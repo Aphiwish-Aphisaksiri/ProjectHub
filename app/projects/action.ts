@@ -41,7 +41,6 @@ export async function createProject({ title, description, visibility, addReadMe 
     description: string;
     visibility: "PRIVATE" | "PUBLIC";
     addReadMe: boolean;
-    setResult: (result: { type: "success" | "error"; message: string } | null) => void;
 }) {
     // Fetch ownerId automatically, and check if the user is logged in
     const user = await getCurrentUser();

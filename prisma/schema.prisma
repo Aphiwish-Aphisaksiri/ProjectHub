@@ -15,7 +15,6 @@ model Project {
   updatedAt   DateTime  @updatedAt
   visibility  ProjectVisibility @default(PRIVATE)
   addReadMe   Boolean   @default(false)
-  // TODO: Add slug to make URL more user-friendly
 
   // Relations
   owner       User?     @relation(fields: [ownerId], references: [id])
