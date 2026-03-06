@@ -13,7 +13,7 @@
 import ProjectTitleInput from "./projectTitleInput";
 import ProjectDescription from "./projectDescription";
 import { useState } from 'react';
-import { createProject } from "../action";
+import { createProject, getCurrentUserId } from "../action";
 import { ProjectVisibility } from '@prisma/client'
 
 export default function NewProjectForm() {
@@ -38,12 +38,25 @@ export default function NewProjectForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+
+        // Check if the user logged on
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            setResult({
+                type: "error",
+                message: "You must be logged in to create a project."
+            });
+            setLoading(false);
+            return;
+        }
+
         try {
             await createProject({
                 title,
                 description,
                 visibility,
                 addReadMe,
+                setResult
             });
             setResult({
                 type: "success",

@@ -1,5 +1,6 @@
 "use server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function checkIfProjectTitleExists(title: string) {
     const project = await prisma.project.findFirst({
@@ -29,20 +30,30 @@ export async function getProjectsTitle(userId: string | null) {
     });
 }
 
+export async function getCurrentUserId() {
+    const user = await getCurrentUser();
+    return user?.id ?? null;
+}
+
 // TODO: Add ownerId to the project creation data and ensure it's set to the current user's ID in the createProject function
 export async function createProject({ title, description, visibility, addReadMe }: {
     title: string;
     description: string;
     visibility: "PRIVATE" | "PUBLIC";
     addReadMe: boolean;
+    setResult: (result: { type: "success" | "error"; message: string } | null) => void;
 }) {
-    // 1. Create the project in the database
+    // Fetch ownerId automatically, and check if the user is logged in
+    const user = await getCurrentUser();
+    const ownerId = user?.id ?? null;
+
     return await prisma.project.create({
         data: {
             title,
             description,
             visibility,
-            addReadMe
+            addReadMe,
+            ownerId
         },
     });
 }
