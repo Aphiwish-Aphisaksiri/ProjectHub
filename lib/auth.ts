@@ -6,53 +6,53 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 import { AdapterUser } from "next-auth/adapters";
 import { SessionStrategy } from "next-auth";
+import { getServerSession } from "next-auth/next";
 
 type ExtendedUser = AdapterUser & {
     hashedPassword?: string;
 };
 
 export const authOptions: AuthOptions = {
-    adapter: PrismaAdapter(prisma), // uses Prisma to store users/sessions in DB
+    adapter: PrismaAdapter(prisma),
     providers: [
         CredentialsProvider({
-            name: "Credentials", // using email/password for auth
-            credentials: { email: { label: "Email", type: "text" }, password: { label: "Password", type: "password" } },
-            async authorize(credentials) {
-                // Check if email and password are provided
+            name: "Credentials",
+            credentials: {
+                email: { label: "Email", type: "text" },
+                password: { label: "Password", type: "password" },
+            },
+            async authorize(credentials): Promise<{ id: string; email: string; name?: string } | null> {
                 if (!credentials?.email || !credentials.password) return null;
-                // Check if user exists by email
                 const user = await prisma.user.findUnique({ where: { email: credentials.email } }) as ExtendedUser | null;
                 if (!user || !user.hashedPassword) return null;
-                // Check if password is valid
                 const valid = await bcrypt.compare(credentials.password, user.hashedPassword);
                 if (!valid) return null;
-
-                // If everything is valid, return user object including id, email, and name (for session)
                 return { id: user.id, email: user.email, name: user.name };
-            }
+            },
         }),
     ],
-    session: { strategy: "jwt" as SessionStrategy }, // keeps sessions in DB via adapter
-    // Callback runs every time a session is checked/created. We can add user id to session here for easy access on client/server.
+    session: { strategy: "jwt" as SessionStrategy },
     callbacks: {
-        // By default, NextAuth only includes email and name in session.user. We want to add id as well for easier access.
-        session({ session, user }: { session: Session; user: User }) {
-            // expose user id to server/client session object
-            if (session.user && user.id) {
-                (session.user as typeof user & { id: string }).id = user.id;
+        session({ session, token }: { session: Session; token: Record<string, unknown> & { id?: string } }): Session {
+            if (session.user && token?.id) {
+                (session.user as { id: string }).id = token.id;
             }
             return session;
-        }
+        },
+        jwt({ token, user }: { token: Record<string, unknown> & { id?: string }; user?: { id?: string } }): Record<string, unknown> & { id?: string } {
+            if (user && user.id) {
+                token.id = user.id;
+            }
+            return token;
+        },
     },
-    // Sign and encrypt session cookies with this secret (should be set in env for production)
+    // ...existing code...
     secret: process.env.NEXTAUTH_SECRET,
 };
 
 export default NextAuth(authOptions);
 
-// helper to use server-side
-import { getServerSession } from "next-auth/next";
-export async function getCurrentUser() {
+export async function getCurrentUser(): Promise<{ id: string; email: string; name?: string } | null> {
     const session = await getServerSession(authOptions);
-    return session?.user ?? null; // includes id if callback added it
+    return session?.user ?? null;
 }
