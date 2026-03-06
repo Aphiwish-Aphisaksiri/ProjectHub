@@ -53,7 +53,6 @@ export default function NewProjectForm() {
                 description,
                 visibility,
                 addReadMe,
-                setResult
             });
             setResult({
                 type: "success",
