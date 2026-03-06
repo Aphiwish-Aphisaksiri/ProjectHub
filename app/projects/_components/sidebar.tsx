@@ -2,7 +2,7 @@
 
 import { GoHome, GoGear } from "react-icons/go";
 import { LuNotebookPen } from "react-icons/lu";
-import { getProjectsTitle } from "../action";
+import { getProjectsTitle, getCurrentUserId } from "../action";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -13,7 +13,11 @@ export default function Sidebar() {
 
     useEffect(() => {
         const fetchProjects = async () => {
-            const userId = null; // Replace with actual user ID
+            const userId = await getCurrentUserId();
+            if (!userId) {
+                setProjectsList([]);
+                return;
+            }
             const projectsList = await getProjectsTitle(userId);
             setProjectsList(projectsList);
         };
