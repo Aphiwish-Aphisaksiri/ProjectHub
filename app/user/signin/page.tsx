@@ -49,6 +49,7 @@ export default function UserSigninPage() {
         }
         else {
             setResult({ type: "success", message: "Signed in successfully!" });
+            window.dispatchEvent(new Event("userSessionChanged"));
             // Optionally, you can redirect the user after successful sign-in
             // For example: router.push("/dashboard");
         }

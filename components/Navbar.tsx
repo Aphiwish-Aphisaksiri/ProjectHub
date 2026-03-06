@@ -27,6 +27,13 @@ export default function Navbar() {
       setUser(name);
     }
     fetchUser();
+
+    const userChangeHandler = () => fetchUser();
+    window.addEventListener('userSessionChanged', userChangeHandler);
+
+    return () => {
+      window.removeEventListener('userSessionChanged', userChangeHandler);
+    }
   }, []);
 
   // Close mobile menu on route change
@@ -70,7 +77,9 @@ export default function Navbar() {
         {/* Right: actions */}
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex items-center gap-3">
-              <Link href="/sandbox" className="px-3 py-2 text-sm rounded-md">{user}</Link>
+              <Link href="/sandbox" className="px-3 py-2 text-sm rounded-md">
+                {user ? user : "Guest"}
+              </Link>
               <Link href="/user" className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
                 <span className="sr-only">Open user profile</span>
                 <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-sm">

@@ -63,8 +63,11 @@ export default function UserSignUpPage(){
                 email,
                 password,
             }));
-            if (signInRes?.error) {
-                setResult({ type: "error", message: signInRes.error });
+            if (signInRes?.ok) {
+                setResult({ type: "success", message: "Signed in successfully!" });
+                window.dispatchEvent(new Event("userSessionChanged"));
+            } else {
+                setResult({ type: "error", message: "Account created but failed to sign in. Please try signing in manually." });
             }
         } else {
             setResult({ type: "error", message: data.error || "Something went wrong." });

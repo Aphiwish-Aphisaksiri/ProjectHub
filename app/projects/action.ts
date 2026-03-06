@@ -29,6 +29,7 @@ export async function getProjectsTitle(userId: string | null) {
     });
 }
 
+// TODO: Add ownerId to the project creation data and ensure it's set to the current user's ID in the createProject function
 export async function createProject({ title, description, visibility, addReadMe }: {
     title: string;
     description: string;
