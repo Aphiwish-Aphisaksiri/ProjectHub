@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { getCurrentUserName } from './action';
 
 type Route = { label: string; href: string };
 
@@ -18,6 +19,15 @@ const ROUTES: Route[] = [
 export default function Navbar() {
   const pathname = usePathname() || '/';
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const name = await getCurrentUserName();
+      setUser(name);
+    }
+    fetchUser();
+  }, []);
 
   // Close mobile menu on route change
   // useEffect(() => {
@@ -60,10 +70,12 @@ export default function Navbar() {
         {/* Right: actions */}
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex items-center gap-3">
-              <button className="px-3 py-2 text-sm rounded-md hover:bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">New</button>
+              <Link href="/sandbox" className="px-3 py-2 text-sm rounded-md">{user}</Link>
               <Link href="/user" className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-slate-50">
                 <span className="sr-only">Open user profile</span>
-                <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-sm">AA</div>
+                <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-sm">
+                  {user && user.length >= 2 ? user[0] + user[1] : 'AA'}
+                </div>
               </Link>
             </div>
 
