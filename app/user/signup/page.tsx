@@ -56,7 +56,16 @@ export default function UserSignUpPage(){
         const data = await res.json();
         setLoading(false);
         if (res.ok) {
-            setResult({ type: "success", message: "Account created successfully!" });
+            setResult({ type: "success", message: "Account created successfully! Signing you in..." });
+            // Auto sign in
+            const signInRes = await import("next-auth/react").then(mod => mod.signIn("credentials", {
+                redirect: true,
+                email,
+                password,
+            }));
+            if (signInRes?.error) {
+                setResult({ type: "error", message: signInRes.error });
+            }
         } else {
             setResult({ type: "error", message: data.error || "Something went wrong." });
         }
