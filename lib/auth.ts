@@ -21,14 +21,16 @@ export const authOptions: AuthOptions = {
                 email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials): Promise<{ id: string; email: string; name?: string } | null> {
+            async authorize(credentials): Promise<{ id: string; email: string; name: string } | null> {
                 if (!credentials?.email || !credentials.password) return null;
                 const user = await prisma.user.findUnique({ where: { email: credentials.email } }) as ExtendedUser | null;
                 if (!user || !user.hashedPassword) return null;
                 const valid = await bcrypt.compare(credentials.password, user.hashedPassword);
                 if (!valid) return null;
+                // Ensure all fields are present
+                if (!user.id || !user.email || !user.name) return null;
                 return { id: user.id, email: user.email, name: user.name };
-            },
+            }
         }),
     ],
     session: { strategy: "jwt" as SessionStrategy },
@@ -52,7 +54,12 @@ export const authOptions: AuthOptions = {
 
 export default NextAuth(authOptions);
 
-export async function getCurrentUser(): Promise<{ id: string; email: string; name?: string } | null> {
+export async function getCurrentUser(): Promise<{ id: string; email: string; name: string } | null> {
     const session = await getServerSession(authOptions);
-    return session?.user ?? null;
+    if (!session?.user) return null;
+    // NextAuth's session.user may not include id/email/name directly, so cast as needed
+    const user = session.user as { id?: string; email?: string; name?: string };
+    // Check if id, email, and name are present before returning
+    if (!user.id || !user.email || !user.name) return null;
+    return { id: user.id, email: user.email, name: user.name };
 }
