@@ -65,14 +65,14 @@ export default function UserSignUpPage(){
     return (
         <div className="bg-primary flex flex-col h-full items-center">
             <form onSubmit={handleSubmit}
-                className="login-div flex flex-col items-center justify-center gap-2 mx-40 my-20 w-140">
+                className="login-div flex flex-col items-center justify-center gap-4 mx-40 my-30 w-140">
                 <h1 className="text-[32px] text-offwhite font-bold">
                     Sign Up for ProjectHub
                 </h1>
 
                 {/* Name input */}
                 <div className="flex flex-col items-left justify-center w-full gap-1">
-                    <label htmlFor="name" className="text-[24px] text-offwhite font-semibold">
+                    <label htmlFor="name" className="text-[20px] text-offwhite font-semibold">
                         Name
                     </label>
                     <input
@@ -89,7 +89,7 @@ export default function UserSignUpPage(){
 
                 {/* Email input */}
                 <div className="flex flex-col items-left justify-center w-full gap-1">
-                    <label htmlFor="email" className="text-[24px] text-offwhite font-semibold">
+                    <label htmlFor="email" className="text-[20px] text-offwhite font-semibold">
                         Email
                     </label>
                     <input
@@ -106,7 +106,7 @@ export default function UserSignUpPage(){
 
                 {/* Password input */}
                 <div className="flex flex-col items-left justify-center w-full gap-1">
-                    <label htmlFor="password" className="text-[24px] text-offwhite font-semibold">
+                    <label htmlFor="password" className="text-[20px] text-offwhite font-semibold">
                         Password
                     </label>
                     <input
@@ -123,7 +123,7 @@ export default function UserSignUpPage(){
 
                 {/* Confirm Password input */}
                 <div className="flex flex-col items-left justify-center w-full gap-1">
-                    <label htmlFor="confirmPassword" className="text-[24px] text-offwhite font-semibold">
+                    <label htmlFor="confirmPassword" className="text-[20px] text-offwhite font-semibold">
                         Confirm Password
                     </label>
                     <input

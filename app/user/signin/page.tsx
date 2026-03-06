@@ -57,14 +57,14 @@ export default function UserSigninPage() {
     return (
         <div className="bg-primary flex flex-col h-full items-center">
             <form onSubmit={handleSubmit}
-                className="login-div flex flex-col items-center justify-center gap-2 mx-40 my-20 w-140">
+                className="login-div flex flex-col items-center justify-center gap-4 mx-40 my-40 w-140">
                 <h1 className="text-[32px] text-offwhite font-bold">
                     Login to ProjectHub
                 </h1>
 
                 {/* Email input */}
                 <div className="flex flex-col items-left justify-center w-full gap-1">
-                    <label htmlFor="email" className="text-[24px] text-offwhite font-semibold">
+                    <label htmlFor="email" className="text-[20px] text-offwhite font-semibold">
                         Email
                     </label>
                     <input
@@ -81,7 +81,7 @@ export default function UserSigninPage() {
 
                 {/* Password input */}
                 <div className="flex flex-col items-left justify-center w-full gap-1">
-                    <label htmlFor="password" className="text-[24px] text-offwhite font-semibold">
+                    <label htmlFor="password" className="text-[20px] text-offwhite font-semibold">
                         Password
                     </label>
                     <input
