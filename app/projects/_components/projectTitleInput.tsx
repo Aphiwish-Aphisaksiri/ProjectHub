@@ -28,7 +28,7 @@ export default function ProjectTitleInput({ title, setTitle, isDuplicate, setIsD
 
         // 3. Cleanup: If the user types again, this "kills" the previous timer
         return () => clearTimeout(timer);
-    }, [title, isDuplicate, setIsDuplicate]); // This effect runs every time 'title' changes
+    }, [title]); // This effect runs every time 'title' changes
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setTitle(e.target.value); // Update the title state on every keystroke triggering the dependency array in useEffect ^^^

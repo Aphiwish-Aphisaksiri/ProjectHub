@@ -11,7 +11,7 @@ export default function ProjectDescription({ isExceed, setIsExceed, description,
         } else {
             setIsExceed(false);
         }
-    }, [description, isExceed, setIsExceed]);
+    }, [description]);
 
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setDescription(e.target.value);

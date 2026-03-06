@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 
@@ -12,7 +12,9 @@ export default function UserSigninPage() {
 
     useEffect(() => {
         // Clear previous result when email or password changes
-        setResult(null);
+        if (result !== null) {
+            startTransition(() => setResult(null));
+        }
     }, [email, password]);
 
     const validateEmail = (v: string) => /\S+@\S+\.\S+/.test(v); // Simple email validation regex
