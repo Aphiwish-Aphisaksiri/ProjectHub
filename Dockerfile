@@ -11,7 +11,13 @@ COPY package-lock.json ./
 # Install dependencies
 RUN npm install
 
-# Copy all files
+# Copy prisma schema
+COPY prisma ./prisma
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy all other files
 COPY . .
 
 # Build Next.js app
