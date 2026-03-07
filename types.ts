@@ -7,3 +7,8 @@ export type Project = {
     description?: string;
     createdAt: string;
 };
+
+export enum ProjectVisibility {
+    PRIVATE = "PRIVATE",
+    PUBLIC = "PUBLIC",
+}

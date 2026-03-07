@@ -11,7 +11,7 @@ import ProjectTitleInput from "./projectTitleInput";
 import ProjectDescription from "./projectDescription";
 import { useState } from 'react';
 import { createProject } from "../action";
-import { ProjectVisibility } from '@prisma/client'
+import { ProjectVisibility } from "@/types";
 
 export default function NewProjectForm() {
     const visibilityOptions = Object.values(ProjectVisibility);
