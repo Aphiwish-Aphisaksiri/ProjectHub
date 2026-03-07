@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react"; // Added useEffect
-import { checkIfProjectTitleExists } from "../action";
+import { useState, useEffect } from "react";
 
 export default function ProjectTitleInput({ title, setTitle, isDuplicate, setIsDuplicate}: { title: string; setTitle: (value: string) => void; isDuplicate: boolean; setIsDuplicate: (value: boolean) => void }) {
     const [isChecking, setIsChecking] = useState(false);
@@ -17,10 +16,16 @@ export default function ProjectTitleInput({ title, setTitle, isDuplicate, setIsD
         const timer = setTimeout(async () => {
             setIsChecking(true);
             try {
-                const exists = await checkIfProjectTitleExists(title);
-                setIsDuplicate(exists);
+                const res = await fetch(`/api/projects/title-exists?title=${encodeURIComponent(title)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setIsDuplicate(data.exists);
+                } else {
+                    setIsDuplicate(false);
+                }
             } catch (error) {
                 console.error("Failed to check title:", error);
+                setIsDuplicate(false);
             } finally {
                 setIsChecking(false);
             }

@@ -2,26 +2,30 @@
 
 import { GoHome, GoGear } from "react-icons/go";
 import { LuNotebookPen } from "react-icons/lu";
-import { getProjectsTitle, getCurrentUserId } from "../action";
 import { useEffect, useState } from "react";
+import { Project } from "@/types";
 import Link from "next/link";
 
 //TODO: Make sidebar a component and make it collapsible for mobile view. Also, add functionality to the project list and settings button.
 
 export default function Sidebar() {
-    const [projectsList, setProjectsList] = useState<{ id: string; title: string }[]>([]);
+    const [projectsList, setProjectsList] = useState<Project[]>([]);
 
     useEffect(() => {
         const fetchProjects = async () => {
-            const userId = await getCurrentUserId();
-            if (!userId) {
+            const res = await fetch("/api/projects");
+            if (res.ok) {
+                const data = await res.json();
+                // Map to the expected list format
+                const list = data.map((project: Project) => ({
+                    id: project.id,
+                    title: project.title,
+                }));
+                setProjectsList(list);
+            } else {
                 setProjectsList([]);
-                return;
             }
-            const projectsList = await getProjectsTitle(userId);
-            setProjectsList(projectsList);
         };
-
         fetchProjects();
     }, []);
 

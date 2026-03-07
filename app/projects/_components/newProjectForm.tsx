@@ -10,7 +10,7 @@
 import ProjectTitleInput from "./projectTitleInput";
 import ProjectDescription from "./projectDescription";
 import { useState } from 'react';
-import { createProject, getCurrentUserId } from "../action";
+import { createProject } from "../action";
 import { ProjectVisibility } from '@prisma/client'
 
 export default function NewProjectForm() {
@@ -37,15 +37,15 @@ export default function NewProjectForm() {
         setLoading(true);
 
         // Check if the user logged on
-        const userId = await getCurrentUserId();
-        if (!userId) {
-            setResult({
-                type: "error",
-                message: "You must be logged in to create a project."
-            });
-            setLoading(false);
-            return;
-        }
+        // const userId = await getCurrentUserId();
+        // if (!userId) {
+        //     setResult({
+        //         type: "error",
+        //         message: "You must be logged in to create a project."
+        //     });
+        //     setLoading(false);
+        //     return;
+        // }
 
         try {
             await createProject({
