@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "DEBUG=prisma:* NEXT_PUBLIC_HOST=0.0.0.0 NEXT_HOST=0.0.0.0 next start",
+    "start": "NEXT_PUBLIC_HOST=0.0.0.0 NEXT_HOST=0.0.0.0 next start",
     "lint": "eslint"
   },
   "dependencies": {

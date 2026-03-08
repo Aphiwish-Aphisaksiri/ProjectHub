@@ -9,6 +9,8 @@ Color Scheme for this web app is
     Green: #208F0A
     Red: #8F0A0A
 
+TODO: Move the postgres database into a docker container and connect it to the backend. This will allow for easier development and deployment.
+
 
 
 
