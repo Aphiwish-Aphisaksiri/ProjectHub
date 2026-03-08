@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Sidebar from "./_components/sidebar";
 import NewProjectForm from "./_components/newProjectForm";
 
