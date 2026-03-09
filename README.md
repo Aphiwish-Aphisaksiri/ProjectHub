@@ -1,4 +1,7 @@
-Color Scheme for this web app is
+# ProjectHub
+
+## Color Scheme
+
     Primary: #061E29
     Secondary: #1D546D
     Tertiary: #5F9598
@@ -9,44 +12,81 @@ Color Scheme for this web app is
     Green: #208F0A
     Red: #8F0A0A
 
-TODO: Move the postgres database into a docker container and connect it to the backend. This will allow for easier development and deployment.
+## Running the webapp with Docker
 
+### Setting up the `.env` file
 
+Create a `.env` file in your project root with the following variables:
 
+    ```bash
+    DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_DB>
+    NEXTAUTH_SECRET=<your-secret>
+    NEXTAUTH_URL=http://localhost:3000
+    POSTGRES_USER=<POSTGRES_USER>
+    POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
+    POSTGRES_DB=<POSTGRES_DB>
+    ```
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+- **NEXTAUTH_SECRET:** Generate a secure secret with:
 
-## Getting Started
+    openssl rand -hex 32
 
-First, run the development server:
+Or use any random 32-character string.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **NEXTAUTH_URL:** Should match your app’s URL (usually `http://localhost:3000` for local development).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your desired values.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Initialize Database
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> **Note:** This step only needs to be done once to set up the database. If you make changes to the Prisma schema, you can run the migration command again to update the database.
 
-## Learn More
+    ```bash
+    docker compose up -d db
+    docker compose up migrate
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+### Run the containerized web app in development mode with hot reloading
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+    ```bash
+    docker compose up --watch dev
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> **Note 1:** Once the development server is running, you can access the web app at `http://localhost:3000`. Any changes you make to the code will automatically trigger a rebuild and refresh the app in the browser.
+> **Note 2:** Once detached from the terminal, the server will continue running but **hot reloading will be disabled**
 
-## Deploy on Vercel
+### Run the containerized web app in production mode
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+    ```bash
+    docker compose up prod
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Stop all containers
+
+    ```bash
+    docker compose down
+    ```
+
+### Monitor the Database
+
+You can monitor and manage your database in two ways:
+
+#### 1. Using Prisma Studio
+
+Run the following command in your terminal:
+
+    ```bash
+    docker compose exec dev npx prisma studio --browser none
+    ```
+
+Then open [http://localhost:51212](http://localhost:51212) in your browser to access Prisma Studio.
+
+#### 2. Using pgAdmin
+
+You can connect to the database directly with pgAdmin using:
+
+- Host: `localhost`
+- Port: `5432`
+- User: (as set in your `.env`, e.g. `postgres`)
+- Password: (as set in your `.env`)
+- Database: (as set in your `.env`, e.g. `projecthub`)
