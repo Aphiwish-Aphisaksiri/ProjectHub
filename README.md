@@ -1,24 +1,12 @@
 # ProjectHub
 
-## Color Scheme
-
-    Primary: #061E29
-    Secondary: #1D546D
-    Tertiary: #5F9598
-    Quaternary: #F3F4F4
-    White: #F0F6FC
-    Off black: #0A1B2A
-    Light Grey: #BABABA
-    Green: #208F0A
-    Red: #8F0A0A
-
 ## Running the webapp with Docker
 
 ### Setting up the `.env` file
 
 Create a `.env` file in your project root with the following variables:
 
-    ```bash
+    ```
     DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_DB>
     NEXTAUTH_SECRET=<your-secret>
     NEXTAUTH_URL=http://localhost:3000
@@ -29,7 +17,9 @@ Create a `.env` file in your project root with the following variables:
 
 - **NEXTAUTH_SECRET:** Generate a secure secret with:
 
+    ```bash
     openssl rand -hex 32
+    ```
 
 Or use any random 32-character string.
 
@@ -67,11 +57,13 @@ Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your 
     docker compose down
     ```
 
-### Monitor the Database
+---
+
+## Monitor the Database
 
 You can monitor and manage your database in two ways:
 
-#### 1. Using Prisma Studio
+### 1. Using Prisma Studio
 
 Run the following command in your terminal:
 
@@ -81,7 +73,7 @@ Run the following command in your terminal:
 
 Then open [http://localhost:51212](http://localhost:51212) in your browser to access Prisma Studio.
 
-#### 2. Using pgAdmin
+### 2. Using pgAdmin
 
 You can connect to the database directly with pgAdmin using:
 
@@ -90,3 +82,19 @@ You can connect to the database directly with pgAdmin using:
 - User: (as set in your `.env`, e.g. `postgres`)
 - Password: (as set in your `.env`)
 - Database: (as set in your `.env`, e.g. `projecthub`)
+
+---
+
+## Design Notes
+
+### Color Scheme
+
+    Primary: #061E29
+    Secondary: #1D546D
+    Tertiary: #5F9598
+    Quaternary: #F3F4F4
+    White: #F0F6FC
+    Off black: #0A1B2A
+    Light Grey: #BABABA
+    Green: #208F0A
+    Red: #8F0A0A
