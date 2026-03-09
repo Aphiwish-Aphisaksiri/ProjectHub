@@ -1,3 +1,26 @@
+# Development image
+FROM node:20 AS dev
+WORKDIR /app
+
+# Copy package.json and package-lock.json (if exists)
+COPY package.json ./
+COPY package-lock.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy prisma schema
+COPY prisma ./prisma
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Expose port 3000
+EXPOSE 3000
+
+# Start Next.js dev server
+CMD ["npm", "run", "dev"]
+
 # Use official Node.js image as base
 FROM node:20 AS builder
 
