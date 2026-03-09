@@ -1,5 +1,5 @@
 services:
-  projecthub:
+  dev:
     build:
       context: .
       target: dev
@@ -19,3 +19,12 @@ services:
         - action: rebuild
           path: ./package.json
     command: npm run dev
+  prod:
+    build:
+      context: .
+      target: production
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    command: npm start
