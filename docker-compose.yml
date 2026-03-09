@@ -1,4 +1,28 @@
 services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+  migrate:
+    build:
+      context: .
+      target: production
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "npx prisma migrate deploy && npx prisma generate"]
   dev:
     build:
       context: .
@@ -18,6 +42,10 @@ services:
             - .git
         - action: rebuild
           path: ./package.json
+        - action: rebuild
+          path: ./prisma/schema.prisma
+    depends_on:
+      - db
     command: npm run dev
   prod:
     build:
@@ -27,4 +55,10 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    depends_on:
+      db:
+        condition: service_healthy
     command: npm start
+
+volumes:
+  db_data:

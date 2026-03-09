@@ -40,15 +40,18 @@ RUN npm install
 # Copy prisma schema
 COPY prisma ./prisma
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Copy all other files
-COPY . .
-
 # Build ARG for DATABASE_URL, default to dummy
 ARG DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb"
 ENV DATABASE_URL=${DATABASE_URL}
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build database
+# RUN npx prisma migrate deploy
+
+# Copy all other files
+COPY . .
 
 # Build Next.js app
 RUN npm run build
