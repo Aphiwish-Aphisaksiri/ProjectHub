@@ -1,4 +1,6 @@
 // lib/auth.ts
+export const dynamic = "force-dynamic";
+
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import NextAuth, { AuthOptions, Session, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
