@@ -6,12 +6,5 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env.prod
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=${DATABASE_URL}
+      - .env
     command: npm run dev

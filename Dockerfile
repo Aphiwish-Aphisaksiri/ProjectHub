@@ -15,6 +15,9 @@ COPY prisma ./prisma
 # Generate Prisma client
 RUN npx prisma generate
 
+# Copy all other files
+COPY . .
+
 # Expose port 3000
 EXPOSE 3000
 
