@@ -15,6 +15,17 @@ Create a `.env` file in your project root with the following variables:
     POSTGRES_DB=<POSTGRES_DB>
     ```
 
+Create a `.env.local` file in your project root with the following variables:
+
+    ```
+    DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@localhost:5432/<POSTGRES_DB>
+    NEXTAUTH_SECRET=<your-secret>
+    NEXTAUTH_URL=http://localhost:3000
+    POSTGRES_USER=<POSTGRES_USER>
+    POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
+    POSTGRES_DB=<POSTGRES_DB>
+    ```
+
 - **NEXTAUTH_SECRET:** Generate a secure secret with:
 
     ```bash
@@ -29,7 +40,7 @@ Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your 
 
 ### Initialize Database
 
-> **Note:** This step only needs to be done once to set up the database. If you make changes to the Prisma schema, you can run the migration command again to update the database.
+> **Note:** This step only needs to be done once to set up the database.
 
     ```bash
     docker compose up -d db
@@ -56,6 +67,18 @@ Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your 
     ```bash
     docker compose down
     ```
+
+---
+
+## Running Prisma Migrations
+
+To apply database migrations, run the following command:
+
+    ```bash
+    dotenv -e .env.local npx prisma migrate dev
+    ```
+
+> **Note:** This command will create a new migration file locally so that you can track changes to your database schema in version control. It will also apply the migration to the database running in the Docker container.
 
 ---
 

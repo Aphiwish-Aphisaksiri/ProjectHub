@@ -1,38 +1,51 @@
 // prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [vector]
 }
 
 model Project {
-  id          String    @id @default(cuid())
+  id          String            @id @default(cuid())
   title       String
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   visibility  ProjectVisibility @default(PRIVATE)
-  addReadMe   Boolean   @default(false)
+  addReadMe   Boolean           @default(false)
 
   // Relations
-  owner       User?     @relation(fields: [ownerId], references: [id])
-  ownerId     String?
+  owner   User?   @relation(fields: [ownerId], references: [id])
+  ownerId String?
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  hashedPassword  String
-  name            String
-  avatarUrl       String?
-  role            UserRole  @default(USER)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String   @id @default(cuid())
+  email          String   @unique
+  hashedPassword String
+  name           String
+  avatarUrl      String?
+  role           UserRole @default(USER)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Collections
-  projects        Project[]
+  projects Project[]
+}
+
+model Vector {
+  id          String                       @id @default(cuid())
+  projectId   String
+  sourceTable String
+  sourceId    String
+  textContent String                       @db.Text
+  chunkIndex  Int                          @default(0)
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime                     @default(now())
 }
 
 enum UserRole {
