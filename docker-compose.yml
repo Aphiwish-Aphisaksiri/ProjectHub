@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:18
+    image: pgvector/pgvector:pg18
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -16,7 +16,7 @@ services:
   migrate:
     build:
       context: .
-      target: production
+      target: dev # Use the dev stage for migration to have access to prisma CLI
     env_file:
       - .env
     depends_on:
@@ -43,8 +43,9 @@ services:
             - .git
         - action: rebuild
           path: ./package.json
-        - action: rebuild
+        - action: sync
           path: ./prisma/schema.prisma
+          target: /app/prisma/schema.prisma
     depends_on:
       - db
     command: npm run dev
