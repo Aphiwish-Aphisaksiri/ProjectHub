@@ -40,7 +40,8 @@ Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your 
 
 ### Initialize Database
 
-> **Note:** This step only needs to be done once to set up the database.
+> **Note 1:** This step only needs to be done once to set up the database.
+> **Note 2:** To update the database schema after making changes to your Prisma models, refer to the [Database Migrations](#database-migrations) section.
 
     ```bash
     docker compose up -d db
@@ -70,7 +71,7 @@ Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your 
 
 ---
 
-## Running Prisma Migrations
+## Database Migrations
 
 To apply database migrations, run the following command:
 
