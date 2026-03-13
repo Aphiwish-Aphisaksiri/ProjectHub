@@ -44,7 +44,7 @@ model Vector {
   sourceId    String
   textContent String                       @db.Text
   chunkIndex  Int                          @default(0)
-  embedding   Unsupported("vector(1536)")?
+  embedding   Unsupported("vector(768)")?
   createdAt   DateTime                     @default(now())
 }
 

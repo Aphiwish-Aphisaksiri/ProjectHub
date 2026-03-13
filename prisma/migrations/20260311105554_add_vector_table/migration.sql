@@ -9,7 +9,7 @@ CREATE TABLE "Vector" (
     "sourceId" TEXT NOT NULL,
     "textContent" TEXT NOT NULL,
     "chunkIndex" INTEGER NOT NULL DEFAULT 0,
-    "embedding" vector(1536),
+    "embedding" vector(768),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Vector_pkey" PRIMARY KEY ("id")

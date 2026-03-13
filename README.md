@@ -12,6 +12,7 @@ Create a `.env` file in your project root with the following variables:
     POSTGRES_USER=<POSTGRES_USER>
     POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
     POSTGRES_DB=<POSTGRES_DB>
+    BACKEND_URL=http://backend:8000
 
 Create a `.env.local` file in your project root with the following variables:
 
@@ -21,6 +22,7 @@ Create a `.env.local` file in your project root with the following variables:
     POSTGRES_USER=<POSTGRES_USER>
     POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
     POSTGRES_DB=<POSTGRES_DB>
+    BACKEND_URL=http://localhost:8000
 
 - **NEXTAUTH_SECRET:** Generate a secure secret with:
 
@@ -91,6 +93,13 @@ You can connect to the database directly with pgAdmin using:
 
 ---
 
+## Backend
+
+    docker compose up ollama
+    docker compose up backend
+
+---
+
 ## Design Notes
 
 ### Color Scheme
@@ -104,3 +113,10 @@ You can connect to the database directly with pgAdmin using:
     Light Grey: #BABABA
     Green: #208F0A
     Red: #8F0A0A
+
+### Ports
+
+    Frontend: 3000
+    Backend: 8000
+    Database: 5432
+    Ollama: 11434

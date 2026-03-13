@@ -15,7 +15,9 @@ export async function createProject({ title, description, visibility, addReadMe 
     if (!user) {
         throw new Error("You must be logged in to create a project.");
     }
-    return await prisma.project.create({
+
+    // 1. Create the project
+    const project = await prisma.project.create({
         data: {
             title,
             description,
@@ -23,5 +25,25 @@ export async function createProject({ title, description, visibility, addReadMe 
             addReadMe,
             ownerId: user.id,
         },
+    });
+
+    // 2. Embedding (Non-blocking)
+    embedProject(project).catch((err) => {
+        console.error("Error embedding project:", project.id, err);
+    });
+
+    return project;
+}
+
+async function embedProject(project: { id: string; title: string; description: string | null}) {
+    await fetch(`${process.env.BACKEND_URL}/embed/project`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            projectId: project.id,
+            sourceId: project.id,
+            title: project.title,
+            description: project.description ?? "",
+        }),
     });
 }
