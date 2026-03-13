@@ -5,12 +5,17 @@
 - Includes loading state management to disable input while waiting for a response.
 */
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function ChatBox({ userId }: { userId: string }) {
     const [messages, setMessages] = useState<{ role: string; content: string }[]>([])
     const [input, setInput] = useState("")
     const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        // Clear messages when userId changes (e.g., on logout/login)
+        setMessages([])
+    }, [userId])
 
     async function handleSend() {
         if (!input.trim() || loading) return
@@ -23,7 +28,7 @@ export default function ChatBox({ userId }: { userId: string }) {
 
         setMessages(prev => [...prev, { role: "assistant", content: "" }])
 
-        const controller = new AbortController()  // ← add this
+        const controller = new AbortController()
 
         try {
             const res = await fetch("/api/chat", {
@@ -34,7 +39,7 @@ export default function ChatBox({ userId }: { userId: string }) {
                     message: input,
                     history: messages
                 }),
-                signal: controller.signal  // ← and this
+                signal: controller.signal
             })
 
             const reader = res.body?.getReader()
