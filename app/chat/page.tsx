@@ -1,9 +1,14 @@
+import ChatBox from "./components/chatBox"
+
 export default function Home() {
+  // Replace with actual userId or fetch from context/auth
+  const userId = "demo-user";
   return (
-    <div className="bg-black text-white flex flex-col items-center justify-center h-full text-3xl"> 
-        <h1 className="text-3xl font-bold">Chat Page</h1>
-        <h2 className="text-lg mt-4">This is where the chatbot interface will be displayed.</h2>
+    <div className="bg-primary text-offwhite flex flex-col items-center justify-center h-full">
+      <h1 className="text-3xl font-bold mb-4">Chat Page</h1>
+      <div className="w-full max-w-3xl bg-primary-800 rounded-lg shadow-lg">
+        <ChatBox userId={userId} />
+      </div>
     </div>
-        
-    );
+  );
 }
