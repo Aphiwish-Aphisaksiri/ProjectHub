@@ -12,6 +12,7 @@ Create a `.env` file in your project root with the following variables:
     POSTGRES_USER=<POSTGRES_USER>
     POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
     POSTGRES_DB=<POSTGRES_DB>
+    BACKEND_URL=http://backend:8000
 
 Create a `.env.local` file in your project root with the following variables:
 
@@ -21,6 +22,7 @@ Create a `.env.local` file in your project root with the following variables:
     POSTGRES_USER=<POSTGRES_USER>
     POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
     POSTGRES_DB=<POSTGRES_DB>
+    BACKEND_URL=http://localhost:8000
 
 - **NEXTAUTH_SECRET:** Generate a secure secret with:
 
