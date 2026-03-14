@@ -22,6 +22,10 @@ model Project {
   // Relations
   owner   User?   @relation(fields: [ownerId], references: [id])
   ownerId String?
+  
+  // Collections
+  tasks    Task[]
+  notes    Note[]
 }
 
 model User {
@@ -36,6 +40,39 @@ model User {
 
   // Collections
   projects Project[]
+  tasks    Task[]
+  notes    Note[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  body        String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String
+  assignee  User?    @relation(fields: [assigneeId], references: [id])
+  assigneeId String?
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String
+  author    User?    @relation(fields: [authorId], references: [id])
+  authorId  String?
 }
 
 model Vector {
@@ -57,6 +94,19 @@ enum UserRole {
 enum ProjectVisibility {
   PRIVATE
   PUBLIC
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  ARCHIVED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
 }
 
 // model User {
