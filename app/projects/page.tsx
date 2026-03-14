@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import Sidebar from "./_components/sidebar";
 import NewProjectForm from "./_components/newProjectForm";
 
+// TODO: Move new project form to /projects/new and create New Project button on sidebar
+
 export default function ProjectsPage() {
 
   return (
