@@ -1,8 +1,10 @@
-export default function NewNotePage() {
+import NewNoteForm from "./components/newNoteForm";
+
+export default async function NewNotePage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     return (
-        <div className="bg-black text-white flex flex-col items-center justify-center h-full text-3xl">
-            <h1 className="text-3xl font-bold">New Note Page</h1>
-            <h2 className="text-lg mt-4">This is where the new note form will be displayed.</h2>
+        <div className="flex items-start justify-center min-h-screen bg-primary">
+            <NewNoteForm projectSlug={slug} />
         </div>
-        );
-    }
+    );
+}
