@@ -27,3 +27,21 @@ async def embed_project(req: ProjectEmbedRequest):
         return {"success": True, "sourceId": req.sourceId}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+class TaskEmbedRequest(BaseModel):
+    projectId: str
+    sourceId: str
+    text: str
+
+@router.post("/task")
+async def embed_task(req: TaskEmbedRequest):
+    try:
+        await embed_source(
+            project_id=req.projectId,
+            source_table="task",
+            source_id=req.sourceId,
+            text=req.text
+        )
+        return {"success": True, "sourceId": req.sourceId}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

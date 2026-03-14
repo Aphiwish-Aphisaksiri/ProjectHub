@@ -20,6 +20,7 @@ export default function Sidebar() {
                 const list = data.map((project: Project) => ({
                     id: project.id,
                     title: project.title,
+                    slug: project.slug,
                 }));
                 setProjectsList(list);
             } else {
@@ -45,7 +46,7 @@ export default function Sidebar() {
                 <div className="projects flex flex-col gap-2.5">
                     {/* TODO: This should be href link */}
                     {projectsList.map((project) => (
-                        <Link key={project.id} href={`/projects/${project.title}`} className="project-item flex flex-row items-center justify-left gap-4 px-1.25 text-offwhite text-[16px]">
+                        <Link key={project.slug} href={`/projects/${project.slug}`} className="project-item flex flex-row items-center justify-left gap-4 px-1.25 text-offwhite text-[16px]">
                             <LuNotebookPen /> {project.title}
                         </Link>
                     ))}
