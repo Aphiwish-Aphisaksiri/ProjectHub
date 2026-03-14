@@ -52,7 +52,7 @@ export default function NewTaskForm({ projectSlug }: { projectSlug: string }) {
     return (
         <form
             onSubmit={handleSubmit}
-            className="new-task flex flex-col items-center justify-center bg-primary w-200 h-full"
+            className="new-task flex flex-col items-center justify-center bg-primary w-4xl h-full p-8"
         >
             {/* Heading */}
             <div className="flex flex-col gap-4 items-left justify-start w-full">
