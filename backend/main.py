@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import httpx
 from db import get_pool, close_pool
 from routes.embed import router as embed_router
+from routes.chat import router as chat_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -12,6 +13,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(embed_router)
+app.include_router(chat_router)
 
 @app.get("/health")
 def health():
