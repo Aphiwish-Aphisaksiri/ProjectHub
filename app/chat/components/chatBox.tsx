@@ -73,35 +73,58 @@ export default function ChatBox({ userId }: { userId: string }) {
     }
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto space-y-4 p-4">
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex-1 overflow-y-auto space-y-4 p-4 pb-24">
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`rounded-lg px-4 py-2 max-w-[70%] ${
-                            msg.role === "user" ? "bg-secondary text-offwhite" : " text-offwhite"
+                        <div className={`rounded-lg px-4 py-2 max-w-[90%] ${
+                            msg.role === "user" ? "bg-secondary text-offwhite text-semibold" : " text-offwhite text-bold"
                         }`}>
                             {msg.content}
                         </div>
                     </div>
                 ))}
             </div>
-            <div className="flex gap-2 p-4 border-t">
-                <input
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleSend()}
-                    placeholder="Ask about your projects..."
-                    className="flex-1 border rounded-lg px-4 py-2"
-                    disabled={loading}
-                />
-                <button
-                    onClick={handleSend}
-                    disabled={loading}
-                    className="px-4 py-2 bg-secondary text-offwhite rounded-lg disabled:opacity-50"
-                >
-                    {loading ? "..." : "Send"}
-                </button>
-            </div>
+            {messages.length <= 0 ? (
+                <div className="flex gap-2 p-4 rounded-2xl bg-secondary">
+                    <input
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && handleSend()}
+                        placeholder="Ask about your projects..."
+                        className="flex-1 rounded-lg px-4 py-2"
+                        disabled={loading}
+                    />
+                    <button
+                        onClick={handleSend}
+                        disabled={loading}
+                        className="px-4 py-2 bg-green text-offwhite rounded-lg disabled:opacity-50"
+                    >
+                        {loading ? "..." : "Send"}
+                    </button>
+                </div>
+            ) : (
+                <div className="fixed left-0 right-0 bottom-0 z-50 flex justify-center h-25 bg-primary">
+                    <div className="w-full max-w-3xl bg-primary-800 rounded-2xl flex gap-2 p-4" style={{height: '72px'}}>
+                        <input
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleSend()}
+                            placeholder="Reply..."
+                            className="flex-1 rounded-lg px-4 py-2 resize-none"
+                            style={{height: '40px', minHeight: '40px', maxHeight: '80px'}}
+                            disabled={loading}
+                        />
+                        <button
+                            onClick={handleSend}
+                            disabled={loading}
+                            className="px-4 py-2 bg-green hover:bg-green/50 transition-colors text-offwhite rounded-lg disabled:opacity-50"
+                        >
+                            {loading ? "..." : "Send"}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
