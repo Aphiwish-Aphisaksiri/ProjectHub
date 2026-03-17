@@ -54,7 +54,7 @@ RUN npx prisma generate
 COPY . .
 
 # Build Next.js app
-RUN npm run build
+RUN rm -rf .next && npm run build
 
 # Production image
 FROM node:20 AS production

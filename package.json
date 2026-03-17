@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "NEXT_PUBLIC_HOST=0.0.0.0 NEXT_HOST=0.0.0.0 next start",
     "lint": "eslint"
