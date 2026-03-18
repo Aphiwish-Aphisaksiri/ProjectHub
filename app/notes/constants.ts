@@ -1,0 +1,1 @@
+export const NOTE_BODY_LIMIT = 10000;

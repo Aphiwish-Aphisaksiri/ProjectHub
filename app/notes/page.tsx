@@ -21,7 +21,7 @@ export default async function NotesPage() {
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150"></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-6 h-full flex items-end pb-8 relative z-10">
+                <div className="max-w-7xl mx-auto px-6 h-full flex items-end pb-8 relative z-10 pt-6">
                     <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
                         <div className="text-center md:text-left">
                             <Link href="/user" className="inline-flex items-center gap-2 text-tertiary font-black tracking-widest text-xs uppercase mb-4 hover:gap-4 transition-all">
@@ -47,7 +47,7 @@ export default async function NotesPage() {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-6 mt-12 relative z-20">
+            <div className="max-w-7xl mx-auto px-6 mt-6 relative z-20">
                 {!user ? (
                     <div className="bg-secondary/20 backdrop-blur-md p-10 rounded-4xl border border-white/10 max-w-2xl mx-auto text-center mt-20">
                         <div className="bg-red/20 text-red-400 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red/10 border border-red/30">

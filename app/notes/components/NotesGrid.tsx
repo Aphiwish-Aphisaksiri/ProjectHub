@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import { FiFileText, FiFolder, FiUser, FiClock, FiSearch } from "react-icons/fi";
 import { useState } from "react";
 
@@ -42,9 +43,11 @@ export default function NotesGrid({ initialNotes }: { initialNotes: Note[] }) {
             {/* Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredNotes.map((note, index) => (
-                    <div
+                    <Link
                         key={note.id}
+                        href={`/notes/${note.id}`}
                         className={`group relative bg-secondary/20 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 hover:border-tertiary/20 hover:bg-secondary/40 transition-all duration-500 shadow-xl hover:shadow-tertiary/5 flex flex-col h-full
+                        focus:outline-none focus:ring-2 focus:ring-tertiary/30
                         ${index % 5 === 0 ? 'md:col-span-2' : ''}
                         ${index % 7 === 0 ? 'lg:row-span-2' : ''}`}
                     >
@@ -84,10 +87,10 @@ export default function NotesGrid({ initialNotes }: { initialNotes: Note[] }) {
                                     <FiClock size={12} />
                                     {new Date(note.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </span>
-                                <span className="text-tertiary/40 group-hover:text-tertiary transition-colors">ID: {note.id.slice(0, 8)}</span>
+                                <span className="text-tertiary/40 group-hover:text-tertiary transition-colors">Open note</span>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
 
