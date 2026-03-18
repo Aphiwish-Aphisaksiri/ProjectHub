@@ -38,3 +38,37 @@ export async function getUserProfile() {
         }
     };
 }
+
+export async function getUserNotes() {
+    const user = await getCurrentUser();
+    if (!user) return [];
+
+    const notes = await prisma.note.findMany({
+        where: {
+            project: {
+                ownerId: user.id
+            }
+        },
+        include: {
+            project: {
+                select: {
+                    title: true,
+                    id: true
+                }
+            },
+            author: {
+                select: {
+                    name: true,
+                    avatarUrl: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    return notes.filter(
+        (note): note is typeof note & { project: { id: string; title: string } } => note.project !== null
+    );
+}
