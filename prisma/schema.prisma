@@ -86,6 +86,22 @@ model Vector {
   createdAt   DateTime                     @default(now())
 }
 
+model ChatLog {
+  id               String   @id @default(cuid())
+  userId           String
+  query            String
+  extractedQuery   String
+  contextSources   String[]
+  similarityScores Float[]
+  resultCount      Int
+  promptTokens     Int
+  completionTokens Int
+  totalDurationMs  Float
+  tokensPerSecond  Float
+  threshold        Float
+  createdAt        DateTime @default(now())
+}
+
 enum UserRole {
   USER
   ADMIN
