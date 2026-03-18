@@ -23,6 +23,7 @@ export async function createNote({ projectSlug, title, body }: {
             title,
             body,
             projectId: project.id,
+            authorId: user.id,
         },
     });
 

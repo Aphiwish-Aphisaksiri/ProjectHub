@@ -31,6 +31,7 @@ export async function createTask({ projectSlug, title, body, status, priority, d
             priority,
             dueDate,
             projectId: project.id,
+            assigneeId: user.id,
         },
     });
 
