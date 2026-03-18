@@ -1,6 +1,6 @@
 'use client';
 
-import { FiFileText, FiFolder, FiUser, FiCalendar, FiClock, FiSearch } from "react-icons/fi";
+import { FiFileText, FiFolder, FiUser, FiClock, FiSearch } from "react-icons/fi";
 import { useState } from "react";
 
 interface Note {
