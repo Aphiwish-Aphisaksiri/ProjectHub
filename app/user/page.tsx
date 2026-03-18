@@ -50,7 +50,7 @@ export default function UserPage() {
     if (!profile) {
         return (
             <div className="min-h-screen bg-primary flex flex-col items-center justify-center p-4">
-                <div className="bg-secondary/20 backdrop-blur-md p-10 rounded-[2rem] border border-white/10 max-w-md w-full text-center">
+                <div className="bg-secondary/20 backdrop-blur-md p-10 rounded-4xl border border-white/10 max-w-md w-full text-center">
                     <div className="bg-red/20 text-red-400 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red/10 border border-red/30">
                         <FiUser size={40} />
                     </div>
@@ -69,7 +69,7 @@ export default function UserPage() {
     return (
         <div className="min-h-full bg-primary text-offwhite pb-20 selection:bg-tertiary/30 overflow-x-hidden">
             {/* Header / Hero Section */}
-            <div className="relative h-48 bg-gradient-to-br from-primary-800 via-secondary-900 to-primary-950 overflow-hidden border-b border-white/5">
+            <div className="relative h-48 bg-linear-to-br from-primary-800 via-secondary-900 to-primary-950 overflow-hidden border-b border-white/5">
                 {/* Decorative Elements */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-tertiary/10 rounded-full blur-[100px] animate-pulse"></div>
@@ -79,9 +79,9 @@ export default function UserPage() {
 
                 <div className="max-w-6xl mx-auto px-6 h-full flex items-end pb-4 relative z-10">
                     <div className="flex flex-col md:flex-row items-center md:items-end gap-8 text-center md:text-left w-full">
-                        <div className="w-40 h-40 rounded-[2.5rem] bg-secondary/30 backdrop-blur-xl border-4 border-white/10 shadow-2xl flex items-center justify-center text-5xl font-black transform -rotate-2 hover:rotate-0 transition-all duration-500 cursor-default group overflow-hidden">
+                        <div className="w-40 h-40 rounded-4xl bg-secondary/30 backdrop-blur-xl border-4 border-white/10 shadow-2xl flex items-center justify-center text-5xl font-black transform -rotate-2 hover:rotate-0 transition-all duration-500 cursor-default group overflow-hidden">
                             {profile.avatarUrl ? (
-                                <img src={profile.avatarUrl} alt={profile.name || ""} className="w-full h-full object-cover rounded-[2.2rem]" />
+                                <img src={profile.avatarUrl} alt={profile.name || ""} className="w-full h-full object-cover rounded-4xl" />
                             ) : (
                                 <span className="text-tertiary drop-shadow-[0_0_15px_rgba(var(--color-tertiary),0.5)] group-hover:scale-110 transition-transform">{initials}</span>
                             )}
@@ -161,11 +161,11 @@ export default function UserPage() {
                                         </Link>
                                     </div>
                                 </div>
-                                <div className="bg-primary-900/50 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center border border-white/5 relative group-hover:border-tertiary/10 transition-colors">
+                                <div className="bg-primary-900/50 rounded-4xl p-8 flex flex-col items-center justify-center text-center border border-white/5 relative group-hover:border-tertiary/10 transition-colors">
                                     <div className="text-tertiary/20 mb-4 group-hover:text-tertiary/40 transition-colors">
                                         <FiUser size={64} />
                                     </div>
-                                    <p className="text-sm text-lightgrey italic font-medium max-w-[200px] leading-relaxed">
+                                    <p className="text-sm text-lightgrey italic font-medium max-w-50 leading-relaxed">
                                         The future depends on what you do today.
                                     </p>
                                 </div>
@@ -175,7 +175,7 @@ export default function UserPage() {
 
                     {/* Right Column: Actions & Info */}
                     <div className="lg:col-span-4 space-y-8">
-                        <div className="bg-secondary/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                        <div className="bg-secondary/40 backdrop-blur-xl p-8 rounded-4xl border border-white/5 shadow-2xl">
                             <h3 className="text-xl font-extrabold text-offwhite mb-8 tracking-tight">System Controls</h3>
                             <div className="space-y-3">
                                 {[
@@ -189,7 +189,7 @@ export default function UserPage() {
                                     </button>
                                 ))}
                                 <div className="pt-6 mt-6 border-t border-white/5">
-                                    <button 
+                                    <button
                                         onClick={() => signOut({ callbackUrl: '/' })}
                                         className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-red/10 hover:bg-red/20 text-red-400 rounded-2xl transition-all font-black tracking-widest uppercase border border-red/30 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-red/5 group"
                                     >
@@ -201,7 +201,7 @@ export default function UserPage() {
                         </div>
 
                         {/* Status Card */}
-                        <div className="bg-gradient-to-br from-tertiary/20 to-primary-950 p-8 rounded-[2.5rem] border border-tertiary/10 shadow-lg relative overflow-hidden">
+                        <div className="bg-linear-to-br from-tertiary/20 to-primary-950 p-8 rounded-4xl border border-tertiary/10 shadow-lg relative overflow-hidden">
                             <div className="absolute top-[-20%] right-[-20%] w-32 h-32 bg-tertiary rounded-full blur-[60px] opacity-10"></div>
                             <h4 className="font-black text-offwhite mb-3 flex items-center gap-3 tracking-tighter">
                                 <span className="flex h-2 w-2 rounded-full bg-green animate-ping"></span>
