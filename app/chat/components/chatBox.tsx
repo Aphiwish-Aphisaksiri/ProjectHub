@@ -119,19 +119,28 @@ export default function ChatBox({ userId }: { userId: string }) {
     }
 
     return (
-        <div className="flex flex-col h-full justify-between">
+        <div className="flex flex-col min-h-full">
             {/* Messages area */}
-            <div className="flex-1 overflow-y-auto space-y-4 p-4 pb-28">
+            <div className="flex-1 flex items-center justify-center overflow-y-auto space-y-3 px-6 pt-2 pb-6">
+                {messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full gap-3 py-16 text-center">
+                        <div className="w-16 h-16 rounded-2xl bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
+                            <span className="text-2xl">✦</span>
+                        </div>
+                        <p className="text-lightgrey font-medium text-sm max-w-xs leading-relaxed">
+                            Start a conversation. Ask about your projects, tasks, or anything on your mind.
+                        </p>
+                    </div>
+                )}
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`rounded-lg px-4 py-2 max-w-[90%] ${
+                        <div className={`px-5 py-3 max-w-[85%] text-sm font-medium leading-relaxed ${
                             msg.role === "user"
-                                ? "bg-secondary text-offwhite font-semibold"
+                                ? "bg-tertiary/20 text-offwhite border border-tertiary/20 rounded-3xl rounded-br-md backdrop-blur-sm"
                                 : msg.role === "error"
-                                ? "bg-red/20 text-red font-medium"
-                                : "text-offwhite font-bold"
+                                ? "bg-red/10 text-red-400 border border-red/20 rounded-3xl rounded-bl-md"
+                                : "bg-secondary/40 text-offwhite border border-white/5 rounded-3xl rounded-bl-md backdrop-blur-xl"
                         }`}>
-                            {/* Show thinking indicator for empty assistant messages while loading */}
                             {msg.role === "assistant" && msg.content === "" && loading
                                 ? <ThinkingIndicator />
                                 : msg.content
@@ -142,21 +151,21 @@ export default function ChatBox({ userId }: { userId: string }) {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Unified input bar — always visible at the bottom */}
-            <div className="fixed left-0 right-0 bottom-0 z-50 flex justify-center bg-primary px-4 py-3">
-                <div className="w-full max-w-3xl bg-secondary rounded-2xl flex gap-2 p-3">
+            {/* Input bar */}
+            <div className="w-full max-w-3xl mx-auto mt-0 mb-4">
+                <div className="bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-3xl flex gap-2 p-2 shadow-2xl shadow-black/30">
                     <input
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSend()}
                         placeholder={messages.length === 0 ? "Ask about your projects..." : "Reply..."}
-                        className="flex-1 rounded-lg px-4 py-2 bg-transparent text-offwhite placeholder:text-lightgrey/60 focus:outline-none"
+                        className="flex-1 rounded-2xl px-4 py-3 bg-transparent text-offwhite placeholder:text-lightgrey/50 focus:outline-none text-sm font-medium"
                         disabled={loading}
                     />
                     <button
                         onClick={handleSend}
                         disabled={loading || !input.trim()}
-                        className="px-4 py-2 bg-green hover:bg-green/50 transition-colors text-offwhite rounded-lg disabled:opacity-50"
+                        className="px-6 py-3 bg-tertiary hover:opacity-90 text-offblack font-black rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-40 disabled:scale-100 shadow-lg shadow-tertiary/20 text-sm"
                     >
                         {loading ? "..." : "Send"}
                     </button>
