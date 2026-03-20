@@ -83,7 +83,7 @@ Replace `<POSTGRES_USER>`, `<POSTGRES_PASSWORD>`, and `<POSTGRES_DB>` with your 
 
     docker compose up -d ollama
     docker compose exec ollama ollama pull nomic-embed-text
-    docker compose exec ollama ollama pull mistral-7b
+    docker compose exec ollama ollama pull mistral:7b
 
 ### 5. Run backend server
 
