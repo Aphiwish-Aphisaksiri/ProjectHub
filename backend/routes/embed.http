@@ -1,0 +1,53 @@
+@baseUrl = http://localhost:8000
+
+### Health Check
+GET {{baseUrl}}/health
+
+###
+
+### Embed a Project
+POST {{baseUrl}}/embed/project
+Content-Type: application/json
+
+{
+  "projectId": "project-123",
+  "sourceId": "src-001",
+  "title": "My First Project",
+  "description": "This is a sample project description."
+}
+
+###
+
+### Embed a Project (no description)
+POST {{baseUrl}}/embed/project
+Content-Type: application/json
+
+{
+  "projectId": "project-123",
+  "sourceId": "src-002",
+  "title": "Project Without Description"
+}
+
+###
+
+### Embed a Task
+POST {{baseUrl}}/embed/task
+Content-Type: application/json
+
+{
+  "projectId": "project-123",
+  "sourceId": "task-001",
+  "text": "Fix the login bug reported in issue #42"
+}
+
+###
+
+### Embed a Note
+POST {{baseUrl}}/embed/note
+Content-Type: application/json
+
+{
+  "projectId": "project-123",
+  "sourceId": "note-001",
+  "text": "Remember to update the README before the next release."
+}

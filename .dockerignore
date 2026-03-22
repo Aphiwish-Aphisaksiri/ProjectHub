@@ -13,3 +13,9 @@ dist
 coverage
 .vscode
 *.tsbuildinfo
+
+# REST Client test files
+**/*.http
+
+# Backend (separate service, not needed in frontend dev image)
+backend/

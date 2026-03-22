@@ -4,3 +4,6 @@ httpx
 asyncpg
 python-dotenv
 cuid2
+pytest
+pytest-asyncio
+respx

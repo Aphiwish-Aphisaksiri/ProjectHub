@@ -1,0 +1,14 @@
+# Don't copy Python cache or test artifacts into the Docker image
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Don't copy local environment files into the image
+.env
+.env.*
+.venv/
+
+# Tests aren't needed in the production image
+tests/
+pytest.ini
