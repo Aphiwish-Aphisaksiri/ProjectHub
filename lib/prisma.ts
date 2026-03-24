@@ -16,7 +16,6 @@
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
@@ -26,8 +25,7 @@ let prisma: PrismaClient;
 
 if (connectionString) {
     // RUNTIME: We have a real URL, use the adapter
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
+    const adapter = new PrismaPg({ connectionString });
     prisma = globalForPrisma.prisma || new PrismaClient({ adapter });
 } else {
     // BUILD-TIME: No URL found (Docker build phase)
