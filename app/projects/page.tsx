@@ -20,7 +20,7 @@ export default async function ProjectsPage() {
         <div className="min-h-full bg-primary text-offwhite pb-20">
 
             {/* ── Hero Banner ── */}
-            <div className="relative h-50 bg-linear-to-br from-primary-800 via-secondary-900 to-primary-950 overflow-hidden border-b border-white/5">
+            <div className="relative min-h-50 bg-linear-to-br from-primary-800 via-secondary-900 to-primary-950 overflow-hidden border-b border-white/5">
                 {/* Decorative blur blobs */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-tertiary/10 rounded-full blur-[100px] animate-pulse"></div>
