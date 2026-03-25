@@ -28,7 +28,7 @@ export default async function TasksPage() {
     return (
         <div className="min-h-full overflow-x-hidden bg-primary pb-20 text-offwhite selection:bg-tertiary/30">
             {/* Hero Banner */}
-            <div className="relative overflow-hidden border-b border-white/5 bg-linear-to-br from-primary-800 via-secondary-900 to-primary-950">
+            <div className="relative min-h-50 overflow-hidden border-b border-white/5 bg-linear-to-br from-primary-800 via-secondary-900 to-primary-950">
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute left-[-10%] top-[-20%] h-[50%] w-[50%] rounded-full bg-tertiary/10 blur-[100px] animate-pulse" />
                     <div
@@ -41,18 +41,21 @@ export default async function TasksPage() {
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-4xl">
-                            <div className="flex items-start gap-4">
-                                <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
-                                    <FiCheckSquare className="text-tertiary" size={38} />
-                                </span>
-                                <div>
+                            <div className="flex flex-col items-start">
+                                <div className="flex flex-row items-center gap-4 text-6xl font-black tracking-tighter text-offwhite">
+                                  <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
+                                      <FiCheckSquare className="text-tertiary" size={38} />
+                                  </span>
                                     <h1 className="text-4xl font-black tracking-tighter text-offwhite md:text-6xl">
-                                        All Tasks
+                                        Tasks
                                     </h1>
-                                    <p className="mt-2 text-lightgrey font-medium">
-                                        {tasks.length} task{tasks.length !== 1 ? "s" : ""} across all projects
-                                    </p>
                                 </div>
+                                <p className="mt-4 text-lightgrey text-lg font-medium">
+                                    Every next step for every project, unified in one place
+                                </p>
+                                <p className="mt-2 text-lightgrey font-medium">
+                                    {tasks.length} task{tasks.length !== 1 ? "s" : ""} across all projects, ready to start?
+                                </p>
                             </div>
                         </div>
 

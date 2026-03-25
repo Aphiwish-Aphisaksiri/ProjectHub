@@ -63,18 +63,21 @@ export default async function ProjectTasksPage({
                                 <FiArrowLeft /> Back to {project.title}
                             </Link>
 
-                            <div className="flex items-start gap-4">
-                                <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
-                                    <FiCheckSquare className="text-tertiary" size={38} />
-                                </span>
-                                <div>
+                            <div className="flex flex-col items-start">
+                                <div className="flex flex-row gap-4">
+                                    <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
+                                        <FiCheckSquare className="text-tertiary" size={38} />
+                                    </span>
                                     <h1 className="text-4xl font-black tracking-tighter text-offwhite md:text-6xl">
                                         Tasks
                                     </h1>
-                                    <p className="mt-2 text-lightgrey font-medium">
-                                        {tasks.length} task{tasks.length !== 1 ? "s" : ""} in this project
-                                    </p>
                                 </div>
+                                <p className="mt-4 text-lightgrey text-lg font-medium">
+                                    Every next step for this project, unified in one place
+                                </p>
+                                <p className="mt-2 text-lightgrey font-medium">
+                                    {tasks.length} task{tasks.length !== 1 ? "s" : ""} in this project, time to execute!
+                                </p>
                             </div>
                         </div>
 
