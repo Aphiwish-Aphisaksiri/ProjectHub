@@ -147,7 +147,10 @@ function SidebarContent({
 
 export default function Sidebar() {
     const [projectsList, setProjectsList] = useState<Project[]>([]);
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window === "undefined") return false;
+        return localStorage.getItem("sidebar-collapsed") === "true";
+    });
     const [mobileOpen, setMobileOpen] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
     const pathname = usePathname();
@@ -174,7 +177,15 @@ export default function Sidebar() {
         ? userName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
         : "??";
 
-    const sharedProps = { collapsed, setCollapsed, userName, initials, projectsList, pathname };
+    const handleSetCollapsed: typeof setCollapsed = (fn) => {
+        setCollapsed((prev) => {
+            const next = typeof fn === "function" ? fn(prev) : fn;
+            localStorage.setItem("sidebar-collapsed", String(next));
+            return next;
+        });
+    };
+
+    const sharedProps = { collapsed, setCollapsed: handleSetCollapsed, userName, initials, projectsList, pathname };
 
     return (
         <>
