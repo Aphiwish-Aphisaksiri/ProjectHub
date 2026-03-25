@@ -37,11 +37,12 @@ export default async function NotesPage() {
                                 {"Everything you've written across your projects, in one place."}
                             </p>
                         </div>
-
-                        <button className="group relative px-8 py-4 bg-tertiary text-offblack font-black rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-xl shadow-tertiary/20 flex items-center gap-3">
-                            <FiPlus className="group-hover:rotate-90 transition-transform" />
-                            Create New Note
-                        </button>
+                        <div className="flex shrink-0">
+                            <button className="group relative px-8 py-4 bg-tertiary text-offblack font-black rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-xl shadow-tertiary/20 flex items-center gap-3">
+                                <FiPlus className="group-hover:rotate-90 transition-transform" />
+                                Create New Note
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
