@@ -62,9 +62,9 @@ export default async function TasksPage() {
                         <div className="flex shrink-0">
                             <Link
                                 href="/projects"
-                                className="inline-flex items-center gap-3 rounded-2xl bg-secondary/20 backdrop-blur-xl border border-white/5 px-6 py-4 text-sm font-black text-offwhite shadow-xl transition-all hover:scale-[1.02] hover:border-tertiary/20 active:scale-[0.98]"
+                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
                             >
-                                <FiPlus />
+                                <FiPlus className="group-hover:rotate-90 transition-transform" />
                                 New Task (via Project)
                             </Link>
                         </div>

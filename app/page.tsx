@@ -21,13 +21,13 @@ export default function Home() {
 
         {/* Text section */}
         <div className="flex flex-col items-center text-center -mt-6">
-          <h1 className="text-[48px] leading-tight font-black tracking-tighter text-offwhite/90">
+          <h1 className="text-[30px] sm:text-[48px] leading-tight font-black tracking-tighter text-offwhite/90">
             Start planning your
           </h1>
-          <h1 className="text-[56px] leading-tight font-black tracking-tighter text-offwhite mb-5">
+          <h1 className="text-[48px] sm:text-[56px] leading-tight font-black tracking-tighter text-offwhite mb-5">
             Personal Projects
           </h1>
-          <p className="text-xl text-lightgrey font-medium max-w-2xl leading-relaxed">
+          <p className="text-lg sm:text-xl text-lightgrey font-medium max-w-2xl leading-relaxed">
             An experimental app to help you plan and execute your dream projects
           </p>
         </div>
@@ -38,14 +38,14 @@ export default function Home() {
             href="/projects"
             className="group flex items-center justify-center gap-3 px-8 py-4 bg-tertiary hover:opacity-90 text-offblack font-black rounded-2xl text-base transition-all transform hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-tertiary/20 w-full sm:w-auto"
           >
-            <FiFolder size={18} />
+            <FiFolder className="group-hover:rotate-[-10deg] transition-transform" size={18} />
             Create Project
           </Link>
           <Link
             href="/chat"
-            className="group flex items-center justify-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-offwhite font-black rounded-2xl text-base transition-all hover:scale-[1.03] active:scale-[0.97] backdrop-blur-sm shadow-xl shadow-black/10 w-full sm:w-auto"
+            className="group flex items-center gap-2 px-6 py-4 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-103 active:scale-97 shadow-xl shadow-black/20"
           >
-            <FiMessageSquare size={18} />
+            <FiMessageSquare className="group-hover:rotate-[-10deg] transition-transform" size={18} />
             Ask an AI assistant
           </Link>
         </div>

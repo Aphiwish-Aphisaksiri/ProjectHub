@@ -50,7 +50,7 @@ export default async function ProjectsPage() {
                         <div className="flex shrink-0">
                             <Link
                                 href="/projects/new"
-                                className="group relative px-8 py-4 bg-tertiary text-offblack font-black rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-xl shadow-tertiary/20 flex items-center gap-3"
+                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
                             >
                                 <FiPlus className="group-hover:rotate-90 transition-transform" />
                                 New Project

@@ -91,7 +91,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                         <div className="flex gap-3 shrink-0">
                             <Link
                                 href={`/projects/${slug}/tasks/new`}
-                                className="group flex items-center gap-2 px-6 py-3 bg-green/10 hover:bg-green/20 border border-green/20 text-green font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
                             >
                                 <FiPlus className="group-hover:rotate-90 transition-transform" size={15} /> New Task
                             </Link>
