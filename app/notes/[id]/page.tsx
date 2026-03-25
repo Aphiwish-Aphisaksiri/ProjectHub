@@ -7,13 +7,20 @@ import { getUserNoteById } from '@/lib/notes';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NoteDetailPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ back?: string }>;
+}) {
     const user = await getCurrentUser();
     if (!user) {
         redirect('/user/signin');
     }
 
     const { id } = await params;
+    const { back } = await searchParams;
     const note = await getUserNoteById(id);
 
     if (!note) {
@@ -32,8 +39,8 @@ export default async function NoteDetailPage({ params }: { params: Promise<{ id:
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-4xl">
-                            <Link href="/notes" className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4">
-                                <FiArrowLeft /> Back to Notes
+                            <Link href={back ?? "/notes"} className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4">
+                                <FiArrowLeft /> {back ? "Back to Project Notes" : "Back to Notes"}
                             </Link>
 
                             <div className="flex items-start gap-4">

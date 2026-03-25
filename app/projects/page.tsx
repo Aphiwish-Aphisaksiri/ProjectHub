@@ -39,7 +39,10 @@ export default async function ProjectsPage() {
                                 Projects
                             </h1>
                             <p className="mt-4 text-lightgrey text-lg font-medium">
-                                {projects.length} project{projects.length !== 1 ? "s" : ""}
+                                Your complete body of work, organized and ready for the world
+                            </p>
+                            <p className="mt-2 text-lightgrey text-md font-medium">
+                                {projects.length} project{projects.length !== 1 ? "s" : ""} found, {"let's get back to building!"}
                             </p>
                         </div>
 
