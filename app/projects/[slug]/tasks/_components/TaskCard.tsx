@@ -74,9 +74,9 @@ export default function TaskCard({
             </h3>
 
             {/* Footer meta */}
-            <div className="flex flex-wrap gap-2 mt-auto">
+            <div className="flex flex-col gap-2 mt-auto">
                 {task.dueDate && (
-                    <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg ${
+                    <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg w-fit ${
                         isOverdue
                             ? "bg-red/10 text-red border border-red/20"
                             : "bg-primary-950/50 text-lightgrey/60 border border-white/5"
@@ -89,9 +89,9 @@ export default function TaskCard({
                     </span>
                 )}
                 {showProject && task.project && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-primary-950/50 text-lightgrey/60 border border-white/5 truncate max-w-30">
-                        <FiFolder size={10} />
-                        {task.project.title}
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-lg bg-primary-950/50 text-lightgrey/60 border border-white/5 w-full">
+                        <FiFolder size={10} className="shrink-0" />
+                        <span className="truncate">{task.project.title}</span>
                     </span>
                 )}
             </div>
