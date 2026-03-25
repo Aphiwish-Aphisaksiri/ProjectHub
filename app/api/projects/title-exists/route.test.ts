@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { GET } from './route'
+import { Project } from '@/types'
 
 vi.mock('@/lib/prisma', () => ({
     prisma: {
@@ -45,7 +46,7 @@ describe('GET /api/projects/title-exists', () => {
 
     it('returns { exists: true } when the title belongs to the user', async () => {
         vi.mocked(getCurrentUser).mockResolvedValue({ id: 'user-1', email: 'test@example.com', name: 'Test User' })
-        vi.mocked(prisma.project.findFirst).mockResolvedValue({ id: 'proj-1' } as Record<string, unknown>)
+        vi.mocked(prisma.project.findFirst).mockResolvedValue({ id: 'proj-1' } as Project)
         const res = await GET(makeRequest('My Project'))
         expect(res.status).toBe(200)
         const body = await res.json()
