@@ -108,9 +108,7 @@ export default function TaskEditorForm({
                 priority,
                 dueDate: dueDate || null,
             });
-            setResult({ type: "success", message: "Task updated." });
             router.push(cancelHref);
-            router.refresh();
         } catch (err) {
             setResult({
                 type: "error",
