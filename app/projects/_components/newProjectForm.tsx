@@ -10,6 +10,7 @@
 import ProjectTitleInput from "./projectTitleInput";
 import ProjectDescription from "./projectDescription";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createProject } from "../action";
 import { ProjectVisibility } from "@/types";
 
@@ -21,6 +22,8 @@ export default function NewProjectForm() {
     const [visibility, setVisibility] = useState<ProjectVisibility>(visibilityOptions[0]);
     const [addReadMe, setAddReadMe] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const router = useRouter();
 
     const [isDuplicate, setIsDuplicate] = useState(false);
     const [isExceed, setIsExceed] = useState(false);
@@ -48,7 +51,7 @@ export default function NewProjectForm() {
         // }
 
         try {
-            await createProject({
+            const project = await createProject({
                 title,
                 description,
                 visibility,
@@ -58,6 +61,7 @@ export default function NewProjectForm() {
                 type: "success",
                 message: "Project created successfully!"
             });
+            router.push(`/projects/${project.slug}`);
         // Handle error
         }
         catch (err) {

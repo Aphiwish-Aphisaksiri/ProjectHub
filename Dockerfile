@@ -6,14 +6,11 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 
-# Install dependencies
-RUN npm install
-
-# Copy prisma schema
+# Copy prisma schema before install so postinstall can run prisma generate
 COPY prisma ./prisma
 
-# Generate Prisma client
-RUN npx prisma generate
+# Install dependencies (postinstall runs prisma generate)
+RUN npm install
 
 # Copy all other files
 COPY . .
@@ -34,18 +31,15 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json ./
 
-# Install dependencies
-RUN npm install
-
-# Copy prisma schema
+# Copy prisma schema before install so postinstall can run prisma generate
 COPY prisma ./prisma
 
 # Build ARG for DATABASE_URL, default to dummy
 ARG DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb"
 ENV DATABASE_URL=${DATABASE_URL}
 
-# Generate Prisma client
-RUN npx prisma generate
+# Install dependencies (postinstall runs prisma generate)
+RUN npm install
 
 # Build database
 # RUN npx prisma migrate deploy
