@@ -109,7 +109,7 @@ export default function Navbar() {
 
       {/* Mobile panel */}
       {open && (
-        <div className="md:hidden border-t">
+        <div className="md:hidden border-t bg-secondary/50 backdrop-blur-sm">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {ROUTES.map((r) => {
               const active = pathname === r.href || pathname.startsWith(r.href + '/');
@@ -118,7 +118,7 @@ export default function Navbar() {
                   key={r.href}
                   href={r.href}
                   className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'
+                    active ? 'bg-indigo-50 text-offblack text-lg font-bold' : 'text-offwhite hover:bg-secondary-200/50'
                   }`}
                   aria-current={active ? 'page' : undefined}
                 >
@@ -127,7 +127,7 @@ export default function Navbar() {
               );
             })}
 
-            <Link href="/user" className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50">
+            <Link href="/user" className="block px-3 py-2 rounded-md text-base font-medium text-offwhite hover:bg-secondary-200/50">
               User
             </Link>
           </div>
