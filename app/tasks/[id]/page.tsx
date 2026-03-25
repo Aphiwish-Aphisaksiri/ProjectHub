@@ -123,17 +123,17 @@ export default async function TaskDetailPage({
 
                                     {/* Badge row: task number · priority · due date */}
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-black tabular-nums text-lightgrey/40">
+                                        <span className="text-md font-black tabular-nums text-lightgrey/40">
                                             #{task.taskNumber}
                                         </span>
                                         <span
-                                            className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${priority.className}`}
+                                            className={`text-sm font-black uppercase tracking-widest px-2 py-1 rounded-lg ${priority.className}`}
                                         >
                                             {priority.label}
                                         </span>
                                         {task.dueDate && (
                                             <span
-                                                className={`flex items-center gap-1.5 text-xs font-black px-2.5 py-1 rounded-lg ${
+                                                className={`flex items-center gap-1.5 text-sm font-black px-2.5 py-1 rounded-lg ${
                                                     isOverdue
                                                         ? "bg-red/10 text-red border border-red/20"
                                                         : "bg-primary-950/50 text-lightgrey/60 border border-white/10"

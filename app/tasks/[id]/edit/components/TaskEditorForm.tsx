@@ -119,113 +119,118 @@ export default function TaskEditorForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
-            <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-8 shadow-2xl backdrop-blur-xl">
-                <label className="mb-3 block text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
-                    Title
-                </label>
-                <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    maxLength={200}
-                    placeholder="Task title…"
-                    className="w-full rounded-2xl border border-white/8 bg-primary-950/50 px-5 py-4 text-lg font-bold text-offwhite placeholder:text-lightgrey/30 focus:border-tertiary/40 focus:outline-none transition-colors"
-                />
-            </div>
-
-            {/* Description */}
-            <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-8 shadow-2xl backdrop-blur-xl">
-                <label className="mb-3 block text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
-                    Description
-                </label>
-                <textarea
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    rows={8}
-                    placeholder="Add a description…"
-                    className="w-full rounded-2xl border border-white/8 bg-primary-950/50 px-5 py-4 text-base leading-relaxed text-offwhite placeholder:text-lightgrey/30 focus:border-tertiary/40 focus:outline-none transition-colors"
-                />
-            </div>
-
-            {/* Status + Priority + Due Date */}
-            <div className="grid gap-6 md:grid-cols-3">
-                {/* Status */}
-                <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-6 shadow-2xl backdrop-blur-xl">
-                    <p className="mb-4 text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
-                        Status
-                    </p>
-                    <div className="flex flex-col gap-2">
-                        {statusOptions.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => setStatus(opt.value)}
-                                className={`rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-widest transition-all ${
-                                    status === opt.value ? opt.activeClass : opt.className
-                                }`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
+        <form onSubmit={handleSubmit}>
+            <div className="grid gap-6 lg:grid-cols-[1.5fr_0.5fr]">
+                {/* Left column: Title + Description + Actions */}
+                <div className="flex flex-col h-full gap-6">
+                    {/* Title */}
+                    <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-8 shadow-2xl backdrop-blur-xl">
+                        <label className="mb-3 block text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
+                            Title
+                        </label>
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            required
+                            maxLength={200}
+                            placeholder="Task title…"
+                            className="w-full rounded-2xl border border-white/8 bg-primary-950/50 px-5 py-4 text-lg font-bold text-offwhite placeholder:text-lightgrey/30 focus:border-tertiary/40 focus:outline-none transition-colors"
+                        />
                     </div>
-                </div>
 
-                {/* Priority */}
-                <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-6 shadow-2xl backdrop-blur-xl">
-                    <p className="mb-4 text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
-                        Priority
-                    </p>
-                    <div className="flex flex-col gap-2">
-                        {priorityOptions.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => setPriority(opt.value)}
-                                className={`rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-widest transition-all ${
-                                    priority === opt.value ? opt.activeClass : opt.className
-                                }`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
+                    {/* Description */}
+                    <div className="flex flex-col rounded-[2.5rem] border border-white/6 bg-secondary/20 p-8 shadow-2xl backdrop-blur-xl">
+                        <label className="mb-3 block text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
+                            Description
+                        </label>
+                        <textarea
+                            value={body}
+                            onChange={(e) => setBody(e.target.value)}
+                            placeholder="Add a description…"
+                            rows={13}
+                            className="w-full rounded-2xl border border-white/8 bg-primary-950/50 px-5 py-4 text-base leading-relaxed text-offwhite placeholder:text-lightgrey/30 focus:border-tertiary/40 focus:outline-none transition-colors"
+                        />
                     </div>
-                </div>
 
-                {/* Due Date */}
-                <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-6 shadow-2xl backdrop-blur-xl">
-                    <p className="mb-4 text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
-                        Due Date
-                    </p>
-                    <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full rounded-2xl border border-white/8 bg-primary-950/50 px-4 py-3 text-sm font-bold text-offwhite focus:border-tertiary/40 focus:outline-none transition-colors scheme-dark"
-                    />
-                    {dueDate && (
-                        <button
-                            type="button"
-                            onClick={() => setDueDate("")}
-                            className="mt-3 flex items-center gap-1.5 text-xs font-black text-lightgrey/40 transition-colors hover:text-red"
-                        >
-                            <FiX size={12} /> Clear date
-                        </button>
+                    {/* Error feedback */}
+                    {result?.type === "error" && (
+                        <p className="rounded-2xl border border-red/20 bg-red/10 px-5 py-3 text-sm font-bold text-red">
+                            {result.message}
+                        </p>
                     )}
                 </div>
+
+                {/* Right column: Status + Priority + Due Date */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-6">
+                    {/* Status */}
+                    <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-6 shadow-2xl backdrop-blur-xl">
+                        <p className="mb-4 text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
+                            Status
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            {statusOptions.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setStatus(opt.value)}
+                                    className={`rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-widest transition-all ${
+                                        status === opt.value ? opt.activeClass : opt.className
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Priority */}
+                    <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-6 shadow-2xl backdrop-blur-xl">
+                        <p className="mb-4 text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
+                            Priority
+                        </p>
+                        <div className="flex flex-col gap-2">
+                            {priorityOptions.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setPriority(opt.value)}
+                                    className={`rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-widest transition-all ${
+                                        priority === opt.value ? opt.activeClass : opt.className
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Due Date */}
+                    <div className="rounded-[2.5rem] border border-white/6 bg-secondary/20 p-6 shadow-2xl backdrop-blur-xl">
+                        <p className="mb-4 text-xs font-black uppercase tracking-[0.35em] text-tertiary/70">
+                            Due Date
+                        </p>
+                        <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className="w-full rounded-2xl border border-white/8 bg-primary-950/50 px-4 py-3 text-sm font-bold text-offwhite focus:border-tertiary/40 focus:outline-none transition-colors scheme-dark"
+                        />
+                        {dueDate && (
+                            <button
+                                type="button"
+                                onClick={() => setDueDate("")}
+                                className="mt-3 flex items-center gap-1.5 text-xs font-black text-lightgrey/40 transition-colors hover:text-red"
+                            >
+                                <FiX size={12} /> Clear date
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Error/Success feedback */}
-            {result?.type === "error" && (
-                <p className="rounded-2xl border border-red/20 bg-red/10 px-5 py-3 text-sm font-bold text-red">
-                    {result.message}
-                </p>
-            )}
-
             {/* Actions */}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4 mt-6">
                 <button
                     type="submit"
                     disabled={loading || isUnchanged || !title.trim()}
