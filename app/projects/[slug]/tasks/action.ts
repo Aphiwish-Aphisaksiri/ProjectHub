@@ -2,9 +2,9 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { TaskStatus, TaskRaw } from "@/types";
+import { TaskStatus, Task } from "@/types";
 
-export async function getProjectTasks(slug: string): Promise<TaskRaw[]> {
+export async function getProjectTasks(slug: string): Promise<Task[]> {
     const user = await getCurrentUser();
     if (!user) return [];
 
