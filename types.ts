@@ -42,3 +42,24 @@ export enum Priority {
     MEDIUM = "MEDIUM",
     HIGH = "HIGH",
 }
+
+/**
+ * The shape returned by getProjectTasks / getAllUserTasks.
+ * Uses string for status/priority to decouple from Prisma's $Enums
+ * (local Prisma client may lag behind the running Docker container after migrations).
+ * Cast to TaskStatus/Priority at the callsite.
+ */
+export type TaskRaw = {
+    id: string;
+    taskNumber: number;
+    title: string;
+    body: string | null;
+    status: string;
+    priority: string;
+    dueDate: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    projectId: string;
+    assignee: { name: string; avatarUrl: string | null } | null;
+    project?: { title: string; slug: string } | null;
+};

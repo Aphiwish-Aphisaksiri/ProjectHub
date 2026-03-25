@@ -36,6 +36,8 @@ export default async function ProjectTasksPage({
         dueDate: t.dueDate ? new Date(t.dueDate) : null,
         createdAt: new Date(t.createdAt),
         updatedAt: new Date(t.updatedAt),
+        assignee: t.assignee ?? undefined,
+        project: t.project ?? undefined,
     }));
 
     return (

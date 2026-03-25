@@ -2,13 +2,14 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
-import { TaskStatus } from "@/types";
+import { TaskStatus, TaskRaw } from "@/types";
 
-export async function getProjectTasks(slug: string) {
+export async function getProjectTasks(slug: string): Promise<TaskRaw[]> {
     const user = await getCurrentUser();
     if (!user) return [];
 
-    return prisma.task.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (prisma.task.findMany as any)({
         where: {
             project: {
                 slug,
@@ -18,6 +19,7 @@ export async function getProjectTasks(slug: string) {
         orderBy: { createdAt: "asc" },
         select: {
             id: true,
+            taskNumber: true,
             title: true,
             body: true,
             status: true,
@@ -26,6 +28,9 @@ export async function getProjectTasks(slug: string) {
             createdAt: true,
             updatedAt: true,
             projectId: true,
+            assignee: {
+                select: { name: true, avatarUrl: true },
+            },
         },
     });
 }

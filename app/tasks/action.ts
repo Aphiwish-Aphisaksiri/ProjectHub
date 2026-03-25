@@ -2,18 +2,21 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { TaskRaw } from "@/types";
 
-export async function getAllUserTasks() {
+export async function getAllUserTasks(): Promise<TaskRaw[]> {
     const user = await getCurrentUser();
     if (!user) return [];
 
-    return prisma.task.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (prisma.task.findMany as any)({
         where: {
             project: { ownerId: user.id },
         },
         orderBy: { createdAt: "asc" },
         select: {
             id: true,
+            taskNumber: true,
             title: true,
             body: true,
             status: true,
@@ -22,6 +25,9 @@ export async function getAllUserTasks() {
             createdAt: true,
             updatedAt: true,
             projectId: true,
+            assignee: {
+                select: { name: true, avatarUrl: true },
+            },
             project: {
                 select: { title: true, slug: true },
             },
