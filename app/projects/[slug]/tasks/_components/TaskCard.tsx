@@ -78,10 +78,11 @@ export default function TaskCard({
         task.status !== TaskStatus.DONE &&
         task.status !== TaskStatus.ARCHIVED;
 
-    // Task detail URL — use project slug if available, fall back to global task route
-    const taskHref = task.project?.slug
-        ? `/projects/${task.project.slug}/tasks/${task.id}`
-        : `/tasks/${task.id}`;
+    // Task detail URL — always canonical /tasks/[id], with ?back= when inside a project board
+    const taskHref =
+        task.project?.slug && !showProject
+            ? `/tasks/${task.id}?back=${encodeURIComponent(`/projects/${task.project.slug}/tasks`)}`
+            : `/tasks/${task.id}`;
 
     return (
         <div
