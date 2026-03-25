@@ -39,10 +39,10 @@ export default async function TasksPage() {
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-4xl">
-                            <div className="flex flex-col items-start">
-                                <div className="flex flex-row items-center gap-4 text-6xl font-black tracking-tighter text-offwhite">
+                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
+                        <div className="text-center md:text-left">
+                            <div className="flex flex-col items-center md:items-start">
+                                <div className="flex flex-row items-center gap-4 justify-center md:justify-start text-6xl font-black tracking-tighter text-offwhite">
                                   <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
                                       <FiCheckSquare className="text-tertiary" size={38} />
                                   </span>
@@ -59,13 +59,15 @@ export default async function TasksPage() {
                             </div>
                         </div>
 
-                        <Link
-                            href="/projects"
-                            className="inline-flex items-center gap-3 self-end rounded-2xl bg-secondary/20 backdrop-blur-xl border border-white/5 px-6 py-4 text-sm font-black text-offwhite shadow-xl transition-all hover:scale-[1.02] hover:border-tertiary/20 active:scale-[0.98]"
-                        >
-                            <FiPlus />
-                            New Task (via Project)
-                        </Link>
+                        <div className="flex shrink-0">
+                            <Link
+                                href="/projects"
+                                className="inline-flex items-center gap-3 rounded-2xl bg-secondary/20 backdrop-blur-xl border border-white/5 px-6 py-4 text-sm font-black text-offwhite shadow-xl transition-all hover:scale-[1.02] hover:border-tertiary/20 active:scale-[0.98]"
+                            >
+                                <FiPlus />
+                                New Task (via Project)
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

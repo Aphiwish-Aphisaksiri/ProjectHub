@@ -41,8 +41,8 @@ export default async function ProjectNotesPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-4xl">
+                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
+                        <div className="text-center md:text-left">
                             <Link
                                 href={`/projects/${slug}`}
                                 className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4"
@@ -50,28 +50,32 @@ export default async function ProjectNotesPage({
                                 <FiArrowLeft /> Back to {project.title}
                             </Link>
 
-                            <div className="flex items-start gap-4">
-                                <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
-                                    <FiFileText className="text-tertiary" size={38} />
-                                </span>
-                                <div>
-                                    <h1 className="text-4xl font-black tracking-tighter text-offwhite md:text-6xl">
-                                        Notes
-                                    </h1>
-                                    <p className="mt-2 text-lightgrey font-medium">
-                                        {notes.length} note{notes.length !== 1 ? "s" : ""} in this project
-                                    </p>
+                            <div className="flex flex-col items-center md:items-start">
+                                <div className="flex items-center gap-4 justify-center md:justify-start">
+                                    <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
+                                        <FiFileText className="text-tertiary" size={38} />
+                                    </span>
+                                    <div>
+                                        <h1 className="text-4xl font-black tracking-tighter text-offwhite md:text-6xl">
+                                            Notes
+                                        </h1>
+                                        <p className="mt-2 text-lightgrey font-medium">
+                                            {notes.length} note{notes.length !== 1 ? "s" : ""} in this project
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <Link
-                            href={`/projects/${slug}/notes/new`}
-                            className="inline-flex items-center gap-3 self-end rounded-2xl bg-tertiary px-6 py-4 text-sm font-black text-offblack shadow-xl shadow-tertiary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            <FiPlus />
-                            Create Note
-                        </Link>
+                        <div className="flex shrink-0">
+                            <Link
+                                href={`/projects/${slug}/notes/new`}
+                                className="inline-flex items-center gap-3 rounded-2xl bg-tertiary px-6 py-4 text-sm font-black text-offblack shadow-xl shadow-tertiary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                <FiPlus />
+                                Create Note
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

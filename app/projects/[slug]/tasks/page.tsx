@@ -54,8 +54,8 @@ export default async function ProjectTasksPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div className="max-w-4xl">
+                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
+                        <div className="text-center md:text-left">
                             <Link
                                 href={`/projects/${slug}`}
                                 className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4"
@@ -63,8 +63,8 @@ export default async function ProjectTasksPage({
                                 <FiArrowLeft /> Back to {project.title}
                             </Link>
 
-                            <div className="flex flex-col items-start">
-                                <div className="flex flex-row gap-4">
+                            <div className="flex flex-col items-center md:items-start">
+                                <div className="flex flex-row gap-4 justify-center md:justify-start">
                                     <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
                                         <FiCheckSquare className="text-tertiary" size={38} />
                                     </span>
@@ -81,13 +81,15 @@ export default async function ProjectTasksPage({
                             </div>
                         </div>
 
-                        <Link
-                            href={`/projects/${slug}/tasks/new`}
-                            className="inline-flex items-center gap-3 self-end rounded-2xl bg-tertiary px-6 py-4 text-sm font-black text-offblack shadow-xl shadow-tertiary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            <FiPlus />
-                            New Task
-                        </Link>
+                        <div className="flex shrink-0">
+                            <Link
+                                href={`/projects/${slug}/tasks/new`}
+                                className="inline-flex items-center gap-3 rounded-2xl bg-tertiary px-6 py-4 text-sm font-black text-offblack shadow-xl shadow-tertiary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                <FiPlus />
+                                New Task
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
