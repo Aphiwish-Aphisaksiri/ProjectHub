@@ -20,20 +20,24 @@ export enum ProjectVisibility {
 
 export type Task = {
     id: string;
+    taskNumber: number;
     title: string;
     body: string | null;
-    status: TaskStatus;
-    priority: Priority;
+    status: string;
+    priority: string;
     dueDate: Date | null;
-    projectId: string;
     createdAt: Date;
     updatedAt: Date;
+    projectId: string;
+    assignee: { name: string; avatarUrl: string | null } | null;
+    project?: { title: string; slug: string } | null;
 };
-
+    
 export enum TaskStatus {
     TODO = "TODO",
     IN_PROGRESS = "IN_PROGRESS",
     DONE = "DONE",
+    ARCHIVED = "ARCHIVED",
 }
 
 export enum Priority {
