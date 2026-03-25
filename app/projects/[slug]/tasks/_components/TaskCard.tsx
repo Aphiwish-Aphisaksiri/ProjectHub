@@ -100,7 +100,7 @@ export default function TaskCard({
                 <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${priority.className}`}>
                     {priority.label}
                 </span>
-                <span className="text-[10px] font-black text-lightgrey/30 tabular-nums">
+                <span className="text-[14px] font-black text-lightgrey/30 tabular-nums mx-1">
                     #{task.taskNumber}
                 </span>
             </div>
@@ -109,7 +109,7 @@ export default function TaskCard({
             <Link
                 href={taskHref}
                 onPointerDown={(e) => e.stopPropagation()}
-                className={`block text-sm font-bold leading-snug mb-4 transition-colors hover:underline underline-offset-2 ${
+                className={`block text-lg font-bold leading-snug mb-4 transition-colors hover:underline underline-offset-2 ${
                     task.status === TaskStatus.DONE || task.status === TaskStatus.ARCHIVED
                         ? "line-through text-lightgrey/50"
                         : "text-offwhite hover:text-tertiary"
@@ -125,7 +125,7 @@ export default function TaskCard({
                     {task.assignee ? (
                         <>
                             <AssigneeAvatar assignee={task.assignee} />
-                            <span className="text-[10px] font-bold text-lightgrey/50 truncate">
+                            <span className="text-[14px] font-bold text-lightgrey/50 truncate">
                                 {task.assignee.name.split(" ")[0]}
                             </span>
                         </>
@@ -138,9 +138,9 @@ export default function TaskCard({
                 </div>
 
                 {/* Due date + project badge */}
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <div className="flex flex-row items-end gap-1.5 shrink-0">
                     {task.dueDate && (
-                        <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                        <span className={`flex items-center gap-1 text-[12px] font-bold px-2 py-0.5 rounded-lg ${
                             isOverdue
                                 ? "bg-red/10 text-red border border-red/20"
                                 : "bg-primary-950/50 text-lightgrey/60 border border-white/5"
@@ -153,7 +153,7 @@ export default function TaskCard({
                         </span>
                     )}
                     {showProject && task.project && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-primary-950/50 text-lightgrey/60 border border-white/5 max-w-28 truncate">
+                        <span className="flex items-center gap-1 text-[12px] font-bold px-2 py-0.5 rounded-lg bg-primary-950/50 text-lightgrey/60 border border-white/5 max-w-28 truncate">
                             <FiFolder size={10} className="shrink-0" />
                             <span className="truncate">{task.project.title}</span>
                         </span>
