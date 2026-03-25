@@ -2,7 +2,7 @@ import { getUserNotes } from "@/components/action";
 import { getCurrentUser } from "@/lib/auth";
 import NotesGrid from "@/app/notes/components/NotesGrid";
 import Link from "next/link";
-import { FiFileText, FiPlus, FiArrowLeft } from "react-icons/fi";
+import { FiFileText, FiPlus } from "react-icons/fi";
 
 export const dynamic = "force-dynamic";
 
@@ -21,27 +21,31 @@ export default async function NotesPage() {
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150"></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-6 h-full flex items-end pb-8 relative z-10 pt-6">
+                <div className="max-w-7xl mx-auto px-6 h-full flex items-end relative z-10 pt-6">
                     <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
                         <div className="text-center md:text-left">
-                            <Link href="/user" className="inline-flex items-center gap-2 text-tertiary font-black tracking-widest text-xs uppercase mb-4 hover:gap-4 transition-all">
-                                <FiArrowLeft /> Back to Profile
-                            </Link>
                             <h1 className="text-6xl font-black tracking-tighter text-offwhite flex items-center gap-4 justify-center md:justify-start">
                                 <span className="p-3 bg-tertiary/20 rounded-3xl border border-tertiary/30">
-                                    <FiFileText className="text-tertiary" size={40} />
+                                    <FiFileText className="text-tertiary" size={38} />
                                 </span>
                                 Notes
                             </h1>
                             <p className="mt-4 text-lightgrey text-lg font-medium max-w-xl">
                                 {"Everything you've written across your projects, in one place."}
                             </p>
+                            <p className="mt-2 text-lightgrey font-medium">
+                                {notes.length} note{notes.length !== 1 ? "s" : ""} across all projects, ready to review?
+                            </p>
                         </div>
                         <div className="flex shrink-0">
-                            <button className="group relative px-8 py-4 bg-tertiary text-offblack font-black rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-xl shadow-tertiary/20 flex items-center gap-3">
-                                <FiPlus className="group-hover:rotate-90 transition-transform" />
-                                Create New Note
-                            </button>
+                            {/* Create new note button */}
+                            <Link 
+                                href="/projects" 
+                                className="inline-flex items-center gap-3 rounded-2xl bg-secondary/20 backdrop-blur-xl border border-white/5 px-6 py-4 text-sm font-black text-offwhite shadow-xl transition-all hover:scale-[1.02] hover:border-tertiary/20 active:scale-[0.98]"
+                            >
+                                <FiPlus/>
+                                New Note (via Project)
+                            </Link>
                         </div>
                     </div>
                 </div>
