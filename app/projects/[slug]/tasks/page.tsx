@@ -73,7 +73,7 @@ export default async function ProjectTasksPage({
                                     </h1>
                                 </div>
                                 <p className="mt-4 text-lightgrey text-lg font-medium">
-                                    Every next step for this project, unified in one place
+                                    Every next step for {project.title}, unified in one place
                                 </p>
                                 <p className="mt-2 text-lightgrey font-medium">
                                     {tasks.length} task{tasks.length !== 1 ? "s" : ""} in this project, time to execute!
