@@ -48,7 +48,7 @@ export default async function NoteDetailPage({
                                     <FiFileText className="text-tertiary" size={38} />
                                 </span>
                                 <div>
-                                    <h1 className="text-4xl font-black tracking-tighter text-offwhite md:text-6xl">{note.title}</h1>
+                                    <h1 className="text-4xl 2xl:text-5xl font-black tracking-tighter text-offwhite">{note.title}</h1>
                                 </div>
                             </div>
                         </div>
