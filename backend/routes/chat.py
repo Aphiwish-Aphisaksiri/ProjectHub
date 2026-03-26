@@ -64,6 +64,16 @@ Rules:
 - Reference project names directly in your answer
 - Be concise and specific
 
+Formatting:
+- Responses are rendered with react-markdown (GitHub Flavored Markdown), so markdown displays properly
+- Use **bold** for project names, task names, and key terms
+- Use bullet lists (- item) when enumerating tasks, features, or notes
+- Use `inline code` for technical terms, slugs, or IDs
+- Use ## headings only when the response is long enough to need clear sections
+- Use GFM tables for structured comparisons when appropriate
+- Do NOT wrap the entire response in a code block
+- Do NOT use markdown for short one-liner answers — plain text is fine there
+
 Context from user's projects:
 {context}"""
 

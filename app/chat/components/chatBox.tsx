@@ -1,5 +1,7 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 type Message = {
     role: "user" | "assistant" | "error"
@@ -243,7 +245,27 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {/* Message content */}
                             {msg.role === "assistant" && msg.content === "" && loading
                                 ? <ThinkingIndicator />
-                                : <span className="whitespace-pre-wrap">{msg.content}</span>
+                                : msg.role === "assistant"
+                                ? <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                                        strong: ({ children }) => <strong className="font-bold text-offwhite">{children}</strong>,
+                                        em:     ({ children }) => <em className="italic text-lightgrey">{children}</em>,
+                                        ul:     ({ children }) => <ul className="list-disc list-inside space-y-1 my-2 pl-1">{children}</ul>,
+                                        ol:     ({ children }) => <ol className="list-decimal list-inside space-y-1 my-2 pl-1">{children}</ol>,
+                                        li:     ({ children }) => <li className="leading-relaxed">{children}</li>,
+                                        h1:     ({ children }) => <h1 className="text-base font-bold text-offwhite mt-3 mb-1">{children}</h1>,
+                                        h2:     ({ children }) => <h2 className="text-sm font-bold text-offwhite mt-3 mb-1">{children}</h2>,
+                                        h3:     ({ children }) => <h3 className="text-sm font-semibold text-offwhite mt-2 mb-1">{children}</h3>,
+                                        code:   ({ children }) => <code className="px-1.5 py-0.5 bg-white/10 rounded text-xs font-mono text-tertiary">{children}</code>,
+                                        pre:    ({ children }) => <pre className="my-2 p-3 bg-white/5 border border-white/10 rounded-xl text-xs font-mono overflow-x-auto">{children}</pre>,
+                                        a:      ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-tertiary underline underline-offset-2 hover:text-tertiary/80">{children}</a>,
+                                        hr:     () => <hr className="my-3 border-white/10" />,
+                                        blockquote: ({ children }) => <blockquote className="border-l-2 border-tertiary/40 pl-3 my-2 text-lightgrey/70 italic">{children}</blockquote>,
+                                    }}
+                                  >{msg.content}</ReactMarkdown>
+                                : msg.content
                             }
                         </div>
                     </div>
