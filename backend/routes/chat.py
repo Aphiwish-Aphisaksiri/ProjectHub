@@ -116,12 +116,15 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                     data = json.loads(line)
                     msg = data.get("message", {})
 
-                    # Yield thinking content with sentinel — frontend collapses it
+                    # Sentinel lines are wrapped in \n so they're always isolated
+                    # even if batched with adjacent content in the same TCP packet.
+                    # Content tokens are yielded as-is — adding \n would strip
+                    # leading newlines from tokens like "\n1." causing "12" corruption.
                     if thinking := msg.get("thinking"):
-                        yield f"__THINKING__{thinking}"
+                        yield f"\n__THINKING__{thinking}\n"
                         continue
 
-                    # Yield regular response tokens
+                    # Yield content tokens verbatim — preserve embedded newlines
                     if token := msg.get("content"):
                         yield token
 
@@ -137,7 +140,7 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                                 eval_count / (eval_duration / 1_000_000_000), 2
                             ) if eval_duration > 0 else 0
                         }
-                        yield f"__METRICS__{json.dumps(metrics)}"
+                        yield f"\n__METRICS__{json.dumps(metrics)}\n"
                         break
 
 @router.post("/")
