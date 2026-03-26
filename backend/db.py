@@ -30,9 +30,12 @@ async def log_chat(
     result_count: int,
     prompt_tokens: int,
     completion_tokens: int,
+    thinking_tokens: int,       # ← new
     total_duration_ms: float,
     tokens_per_second: float,
-    threshold: float
+    threshold: float,
+    model_name: str,            # ← new
+    thinking_enabled: bool      # ← new
 ):
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -40,13 +43,15 @@ async def log_chat(
             INSERT INTO "ChatLog" (
                 id, "userId", query, "extractedQuery",
                 "contextSources", "similarityScores", "resultCount",
-                "promptTokens", "completionTokens", "totalDurationMs",
-                "tokensPerSecond", threshold, "createdAt"
+                "promptTokens", "completionTokens", "thinkingTokens",
+                "totalDurationMs", "tokensPerSecond", threshold,
+                "modelName", "thinkingEnabled", "createdAt"
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW())
         """,
             cuid(), user_id, query, extracted_query,
             context_sources, similarity_scores, result_count,
-            prompt_tokens, completion_tokens, total_duration_ms,
-            tokens_per_second, threshold
+            prompt_tokens, completion_tokens, thinking_tokens,
+            total_duration_ms, tokens_per_second, threshold,
+            model_name, thinking_enabled
         )
