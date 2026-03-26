@@ -121,7 +121,7 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                     # Content tokens are yielded as-is — adding \n would strip
                     # leading newlines from tokens like "\n1." causing "12" corruption.
                     if thinking := msg.get("thinking"):
-                        yield f"\n__THINKING__{thinking}\n"
+                        yield f"\x1e__THINKING__{json.dumps(thinking)}\x1e"
                         continue
 
                     # Yield content tokens verbatim — preserve embedded newlines
@@ -140,7 +140,7 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                                 eval_count / (eval_duration / 1_000_000_000), 2
                             ) if eval_duration > 0 else 0
                         }
-                        yield f"\n__METRICS__{json.dumps(metrics)}\n"
+                        yield f"\x1e__METRICS__{json.dumps(metrics)}\x1e"
                         break
 
 @router.post("/")

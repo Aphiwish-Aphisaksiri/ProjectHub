@@ -152,11 +152,12 @@ export default function ChatBox({ userId }: { userId: string }) {
                 if (result.value) {
                     buffer += decoder.decode(result.value, { stream: true })
 
-                    // Process buffer line by line to handle sentinel values cleanly
-                    const lines = buffer.split("\n")
-                    buffer = lines.pop() ?? ""
+                    // Split on \x1e (ASCII Record Separator) — sentinels are framed
+                    // with \x1e...\x1e so content (including real \n) passes through intact
+                    const frames = buffer.split("\x1e")
+                    buffer = frames.pop() ?? ""
 
-                    for (const chunk of lines) {
+                    for (const chunk of frames) {
                         if (!chunk) continue
                         processChunk(chunk)
                     }
@@ -183,7 +184,7 @@ export default function ChatBox({ userId }: { userId: string }) {
 
     function processChunk(chunk: string) {
         if (chunk.startsWith("__THINKING__")) {
-            const thought = chunk.replace("__THINKING__", "")
+            const thought = JSON.parse(chunk.replace("__THINKING__", ""))
             setMessages(prev => {
                 const updated = [...prev]
                 const last = updated[updated.length - 1]
@@ -242,7 +243,7 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {/* Message content */}
                             {msg.role === "assistant" && msg.content === "" && loading
                                 ? <ThinkingIndicator />
-                                : msg.content
+                                : <span className="whitespace-pre-wrap">{msg.content}</span>
                             }
                         </div>
                     </div>
