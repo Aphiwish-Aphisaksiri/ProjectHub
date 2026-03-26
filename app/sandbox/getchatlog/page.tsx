@@ -66,12 +66,25 @@ export default async function ChatLogPage() {
                             </div>
 
                             {/* Metrics row */}
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">  {/* 5 → 6 cols */}
                                 <Metric label="Duration" value={`${(log.totalDurationMs / 1000).toFixed(2)}s`} />
                                 <Metric label="Tokens/sec" value={log.tokensPerSecond.toFixed(1)} />
                                 <Metric label="Prompt tokens" value={log.promptTokens} />
                                 <Metric label="Completion tokens" value={log.completionTokens} />
-                                <Metric label="Context hits" value={`${log.resultCount} / threshold ${log.threshold}`} />
+                                <Metric label="Thinking tokens" value={log.thinkingTokens} />   {/* ← new */}
+                                <Metric label="Context hits" value={`${log.resultCount} / ${log.threshold}`} />
+                            </div>
+
+                            {/* Model badge on each log card */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg text-lightgrey">
+                                    {log.modelName}
+                                </span>
+                                {log.thinkingEnabled && (
+                                    <span className="text-xs bg-tertiary/20 border border-tertiary/30 text-tertiary px-2 py-0.5 rounded-lg">
+                                        ✦ thinking
+                                    </span>
+                                )}
                             </div>
 
                             {/* Sources + scores row */}

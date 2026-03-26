@@ -1,15 +1,18 @@
-/* ChatBox component for handling user input and displaying chat messages.
-- Maintains a list of messages in state, each with a role (user or assistant) and content.
-- On sending a message, it optimistically adds the user's message to the chat and then sends the message and chat history to the backend.
-- The backend response is expected to be a stream of text tokens, which are appended to the assistant's message in real-time.
-- Includes loading state management to disable input while waiting for a response.
-- Auto-scrolls to the latest message as tokens stream in.
-- Displays a thinking indicator while waiting for the first token from the AI.
-*/
 "use client"
 import { useState, useEffect, useRef } from "react"
 
-type Message = { role: "user" | "assistant" | "error"; content: string }
+type Message = {
+    role: "user" | "assistant" | "error"
+    content: string
+    thinkingContent?: string
+    modelName?: string
+    thinkingEnabled?: boolean
+}
+
+type OllamaModel = {
+    name: string
+    sizeGb: number
+}
 
 function ThinkingIndicator() {
     return (
@@ -21,15 +24,49 @@ function ThinkingIndicator() {
     )
 }
 
+function ThinkingBlock({ content }: { content: string }) {
+    const [expanded, setExpanded] = useState(false)
+    return (
+        <div className="mb-2">
+            <button
+                onClick={() => setExpanded(prev => !prev)}
+                className="flex items-center gap-1.5 text-xs text-lightgrey/60 hover:text-lightgrey transition-colors"
+            >
+                <span className="text-tertiary/80">✦</span>
+                <span>{expanded ? "Hide" : "Show"} thinking</span>
+                <span className="text-[10px]">{expanded ? "▲" : "▼"}</span>
+            </button>
+            {expanded && (
+                <div className="mt-2 px-3 py-2 bg-white/5 border border-white/5 rounded-xl text-xs text-lightgrey/70 leading-relaxed font-mono whitespace-pre-wrap">
+                    {content}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function ModelBadge({ modelName }: { modelName: string }) {
+    // Show just the model name without the tag e.g. "qwen3.5:9b" → "qwen3.5 9b"
+    const display = modelName.replace(":", " ")
+    return (
+        <span className="inline-block text-[10px] text-lightgrey/40 font-mono mb-1">
+            {display}
+        </span>
+    )
+}
+
 export default function ChatBox({ userId }: { userId: string }) {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
     const [loading, setLoading] = useState(false)
+    const [models, setModels] = useState<OllamaModel[]>([])
+    const [selectedModel, setSelectedModel] = useState("qwen3.5:9b")
+    const [thinkingEnabled, setThinkingEnabled] = useState(false)
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
 
-    // Clear messages when userId changes (e.g., on logout/login)
+    // Clear messages when userId changes
     useEffect(() => {
         setMessages([])
     }, [userId])
@@ -41,21 +78,39 @@ export default function ChatBox({ userId }: { userId: string }) {
 
     // Abort in-flight request on unmount
     useEffect(() => {
-        return () => {
-            abortControllerRef.current?.abort()
-        }
+        return () => { abortControllerRef.current?.abort() }
+    }, [])
+
+    // Fetch available models from backend
+    useEffect(() => {
+        fetch("/api/models")
+            .then(res => res.json())
+            .then(data => {
+                // Filter out embedding models
+                const chatModels = data.models.filter(
+                    (m: OllamaModel) => !m.name.includes("embed")
+                )
+                setModels(chatModels)
+                if (chatModels.length > 0) setSelectedModel(chatModels[0].name)
+            })
+            .catch(() => {}) // silently fail, default model still works
     }, [])
 
     async function handleSend() {
         if (!input.trim() || loading) return
 
-        // Abort any previous in-flight request
         abortControllerRef.current?.abort()
         const controller = new AbortController()
         abortControllerRef.current = controller
 
         const userMessage: Message = { role: "user", content: input }
-        setMessages(prev => [...prev, userMessage, { role: "assistant", content: "" }])
+        setMessages(prev => [...prev, userMessage, {
+            role: "assistant",
+            content: "",
+            thinkingContent: "",
+            modelName: selectedModel,
+            thinkingEnabled,
+        }])
         setInput("")
         setLoading(true)
 
@@ -67,8 +122,11 @@ export default function ChatBox({ userId }: { userId: string }) {
                     userId,
                     message: input,
                     history: messages,
+                    modelName: selectedModel,
+                    thinkingEnabled,
                 }),
                 signal: controller.signal,
+                cache: "no-store",
             })
 
             if (!res.ok) {
@@ -86,25 +144,30 @@ export default function ChatBox({ userId }: { userId: string }) {
             const reader = res.body?.getReader()
             const decoder = new TextDecoder()
             let done = false
+            let buffer = ""
 
             while (reader && !done) {
                 const result = await reader.read()
                 done = result.done
                 if (result.value) {
-                    const token = decoder.decode(result.value, { stream: true })
-                    setMessages(prev => {
-                        const updated = [...prev]
-                        updated[updated.length - 1] = {
-                            ...updated[updated.length - 1],
-                            content: updated[updated.length - 1].content + token,
-                        }
-                        return updated
-                    })
+                    buffer += decoder.decode(result.value, { stream: true })
+
+                    // Process buffer line by line to handle sentinel values cleanly
+                    const lines = buffer.split("\n")
+                    buffer = lines.pop() ?? ""
+
+                    for (const chunk of lines) {
+                        if (!chunk) continue
+                        processChunk(chunk)
+                    }
                 }
             }
+
+            // Process any remaining buffer content
+            if (buffer) processChunk(buffer)
+
         } catch (err: unknown) {
             if (err instanceof Error && err.name === "AbortError") return
-
             setMessages(prev => {
                 const updated = [...prev]
                 updated[updated.length - 1] = {
@@ -115,6 +178,33 @@ export default function ChatBox({ userId }: { userId: string }) {
             })
         } finally {
             setLoading(false)
+        }
+    }
+
+    function processChunk(chunk: string) {
+        if (chunk.startsWith("__THINKING__")) {
+            const thought = chunk.replace("__THINKING__", "")
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    thinkingContent: (last.thinkingContent ?? "") + thought,
+                }
+                return updated
+            })
+        } else if (chunk.startsWith("__METRICS__")) {
+            // Metrics handled server-side, ignore on frontend
+        } else {
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    content: last.content + chunk,
+                }
+                return updated
+            })
         }
     }
 
@@ -133,7 +223,11 @@ export default function ChatBox({ userId }: { userId: string }) {
                     </div>
                 )}
                 {messages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div key={i} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                        {/* Model badge — only on assistant messages */}
+                        {msg.role === "assistant" && msg.modelName && (
+                            <ModelBadge modelName={msg.modelName} />
+                        )}
                         <div className={`px-5 py-3 max-w-[85%] text-sm font-medium leading-relaxed ${
                             msg.role === "user"
                                 ? "bg-tertiary/20 text-offwhite border border-tertiary/20 rounded-3xl rounded-br-md backdrop-blur-sm"
@@ -141,6 +235,11 @@ export default function ChatBox({ userId }: { userId: string }) {
                                 ? "bg-red/10 text-red-400 border border-red/20 rounded-3xl rounded-bl-md"
                                 : "bg-secondary/40 text-offwhite border border-white/5 rounded-3xl rounded-bl-md backdrop-blur-xl"
                         }`}>
+                            {/* Thinking block — collapsed by default */}
+                            {msg.role === "assistant" && msg.thinkingContent && (
+                                <ThinkingBlock content={msg.thinkingContent} />
+                            )}
+                            {/* Message content */}
                             {msg.role === "assistant" && msg.content === "" && loading
                                 ? <ThinkingIndicator />
                                 : msg.content
@@ -153,6 +252,44 @@ export default function ChatBox({ userId }: { userId: string }) {
 
             {/* Input bar */}
             <div className="w-full max-w-3xl mx-auto mt-0 mb-4">
+                {/* Model selector + thinking toggle row */}
+                <div className="flex items-center gap-3 px-2 mb-2">
+                    {/* Model selector */}
+                    <select
+                        value={selectedModel}
+                        onChange={e => setSelectedModel(e.target.value)}
+                        disabled={loading}
+                        className="bg-white/5 border border-white/10 text-lightgrey text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-tertiary/40 transition-colors disabled:opacity-50"
+                    >
+                        {models.length > 0 ? (
+                            models.map(m => (
+                                <option key={m.name} value={m.name} className="bg-primary text-offwhite">
+                                    {m.name} ({m.sizeGb}GB)
+                                </option>
+                            ))
+                        ) : (
+                            <option value={selectedModel} className="bg-primary text-offwhite">
+                                {selectedModel}
+                            </option>
+                        )}
+                    </select>
+
+                    {/* Thinking toggle */}
+                    <button
+                        onClick={() => setThinkingEnabled(prev => !prev)}
+                        disabled={loading}
+                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50 ${
+                            thinkingEnabled
+                                ? "bg-tertiary/20 border-tertiary/40 text-tertiary"
+                                : "bg-white/5 border-white/10 text-lightgrey hover:border-white/20"
+                        }`}
+                    >
+                        <span className="text-[10px]">✦</span>
+                        Thinking {thinkingEnabled ? "on" : "off"}
+                    </button>
+                </div>
+
+                {/* Input */}
                 <div className="bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-3xl flex gap-2 p-2 shadow-2xl shadow-black/30">
                     <input
                         value={input}
