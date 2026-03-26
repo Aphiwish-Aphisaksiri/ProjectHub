@@ -144,9 +144,9 @@ You should see your GPU listed.
 
 To apply database migrations, run the following command:
 
-    dotenv -e .env.local npx prisma migrate dev
+    npx dotenv-cli -e .env.local npx prisma migrate dev
 
-> **Note:** This command will create a new migration file locally so that you can track changes to your database schema in version control. It will also apply the migration to the database running in the Docker container.
+> **Note:** This command will create a new migration file locally so that you can track changes to your database schema in version control. It will also apply the migration to the database running in the Docker container. DO NOT RUN MIGRATION INSIDE THE CONTAINER, THE DATABASE WILL BE OUT OF SYNC.
 
 ---
 

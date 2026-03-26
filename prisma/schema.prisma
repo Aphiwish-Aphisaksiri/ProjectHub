@@ -42,6 +42,7 @@ model User {
   projects Project[]
   tasks    Task[]
   notes    Note[]
+  chats    Chat[]
 }
 
 model Task {
@@ -87,6 +88,31 @@ model Vector {
   createdAt   DateTime                     @default(now())
 }
 
+// Chat session — one per conversation thread
+model Chat {
+  id        String    @id @default(cuid())
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+}
+
+// Individual message within a chat session
+model Message {
+  id              String      @id @default(cuid())
+  chatId          String
+  role            MessageRole
+  content         String      @db.Text
+  thinkingContent String?     @db.Text  // Qwen3.5 thinking scratchpad
+  modelName       String?               // which model generated this (null for user messages)
+  thinkingEnabled Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+
+  chat            Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
+
 model ChatLog {
   id               String   @id @default(cuid())
   userId           String
@@ -97,9 +123,12 @@ model ChatLog {
   resultCount      Int
   promptTokens     Int
   completionTokens Int
+  thinkingTokens   Int      @default(0)   // tokens used for thinking
   totalDurationMs  Float
   tokensPerSecond  Float
   threshold        Float
+  modelName        String                  // which model was used
+  thinkingEnabled  Boolean  @default(false)
   createdAt        DateTime @default(now())
 }
 
@@ -124,6 +153,12 @@ enum Priority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }
 
 // model User {

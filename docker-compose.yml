@@ -61,7 +61,7 @@ services:
           target: /app/prisma/schema.prisma
     depends_on:
       - db
-    command: npm run dev
+    command: sh -c "npx prisma generate && npm run dev"
   backend:
     build:
       context: ./backend
