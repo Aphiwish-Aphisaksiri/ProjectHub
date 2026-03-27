@@ -135,7 +135,8 @@ def test_embed_note_error_returns_500(client):
 def test_chat_streams_tokens_without_metrics_sentinel(client):
     with (
         patch("routes.chat.get_embedding", new_callable=AsyncMock, return_value=[0.1] * 768),
-        patch("routes.chat.search_user_projects", new_callable=AsyncMock, return_value=[]),
+        patch("routes.chat.detect_project_scope", new_callable=AsyncMock, return_value=None),
+        patch("routes.chat.search_user_projects_scoped", new_callable=AsyncMock, return_value=[]),
         patch("routes.chat.stream_ollama", side_effect=_fake_stream_ok),
         patch("routes.chat.log_chat", new_callable=AsyncMock),
         patch("asyncio.create_task", _discard_coro),
@@ -164,7 +165,8 @@ def test_chat_filters_rows_below_similarity_threshold(client):
 
     with (
         patch("routes.chat.get_embedding", new_callable=AsyncMock, return_value=[0.0] * 768),
-        patch("routes.chat.search_user_projects", new_callable=AsyncMock, return_value=low_sim_rows),
+        patch("routes.chat.detect_project_scope", new_callable=AsyncMock, return_value=None),
+        patch("routes.chat.search_user_projects_scoped", new_callable=AsyncMock, return_value=low_sim_rows),
         patch("routes.chat.stream_ollama", side_effect=capturing_stream),
         patch("routes.chat.log_chat", new_callable=AsyncMock),
         patch("asyncio.create_task", _discard_coro),
@@ -189,7 +191,8 @@ def test_chat_passes_high_similarity_rows_to_prompt(client):
 
     with (
         patch("routes.chat.get_embedding", new_callable=AsyncMock, return_value=[0.0] * 768),
-        patch("routes.chat.search_user_projects", new_callable=AsyncMock, return_value=high_sim_rows),
+        patch("routes.chat.detect_project_scope", new_callable=AsyncMock, return_value=None),
+        patch("routes.chat.search_user_projects_scoped", new_callable=AsyncMock, return_value=high_sim_rows),
         patch("routes.chat.stream_ollama", side_effect=capturing_stream),
         patch("routes.chat.log_chat", new_callable=AsyncMock),
         patch("asyncio.create_task", _discard_coro),
