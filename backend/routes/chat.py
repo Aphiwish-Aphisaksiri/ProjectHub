@@ -12,13 +12,116 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 DEFAULT_MODEL = "qwen3.5:9b"
+MAX_TOOL_ITERATIONS = 5
+SIMILARITY_THRESHOLD = 0.4
 
 class ChatRequest(BaseModel):
     userId: str
     message: str
     history: list[dict] = []
-    modelName: str = DEFAULT_MODEL      # ← new
-    thinkingEnabled: bool = False       # ← new
+    modelName: str = DEFAULT_MODEL
+    thinkingEnabled: bool = False
+
+# ─── Tool schemas (sent to Ollama so the LLM can decide when to call them) ────
+
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_project_data",
+            "description": (
+                "Semantically search through the user's projects, tasks, and notes "
+                "using meaning-based similarity. Use this for vague, concept-based, "
+                "or natural-language questions about project content."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The natural language search query"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum results to return (default 5, max 10)"
+                    }
+                },
+                "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_structured_data",
+            "description": (
+                "Run a structured query for exact data: task counts, status filters, "
+                "priority filters, due dates, or project metadata. Use this when the "
+                "question is precise and structured rather than conceptual."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "intent": {
+                        "type": "string",
+                        "enum": [
+                            "list_tasks_by_status",
+                            "list_tasks_by_priority",
+                            "count_tasks",
+                            "get_project_details",
+                            "get_notes_for_project"
+                        ],
+                        "description": "The type of structured query to run"
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "Project title to filter by (optional)"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["TODO", "IN_PROGRESS", "DONE", "ARCHIVED"],
+                        "description": "Task status filter"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["LOW", "MEDIUM", "HIGH"],
+                        "description": "Task priority filter"
+                    }
+                },
+                "required": ["intent"]
+            }
+        }
+    }
+]
+
+# ─── System prompt ────────────────────────────────────────────────────────────
+
+def build_system_prompt() -> str:
+    return """You are a helpful assistant for a project management app called ProjectHub.
+You can only access the user's own projects.
+
+You have two tools available:
+- **search_project_data**: For semantic, meaning-based questions about project content (notes, task descriptions, project details). Use when the question is vague or conceptual.
+- **query_structured_data**: For exact structured queries — task counts, status/priority filters, due dates, or listing project metadata.
+
+Rules:
+- ALWAYS call a tool before answering any question about the user's data
+- You may call tools multiple times if the first result isn't sufficient
+- Only answer from tool results — never fabricate project data
+- If tool results are empty, tell the user clearly that nothing was found
+- Reference project names directly in your answer
+
+Formatting:
+- Responses are rendered with react-markdown (GitHub Flavored Markdown)
+- Use **bold** for project names, task names, and key terms
+- Use bullet lists (- item) when enumerating tasks, features, or notes
+- Use `inline code` for technical terms, slugs, or IDs
+- Use ## headings only when the response is long enough to need clear sections
+- Use GFM tables for structured comparisons when appropriate
+- Do NOT wrap the entire response in a code block
+- Do NOT use markdown for short one-liner answers — plain text is fine"""
+
+# ─── Vector search (tool executor) ───────────────────────────────────────────
 
 async def search_user_projects(user_id: str, embedding: list[float], limit: int = 5) -> list[dict]:
     pool = await get_pool()
@@ -41,77 +144,184 @@ async def search_user_projects(user_id: str, embedding: list[float], limit: int 
         """, user_id, limit)
         return [dict(row) for row in rows]
 
-def build_prompt(message: str, context_rows: list[dict], history: list[dict]) -> list[dict]:
-    if context_rows:
-        context_parts = []
-        seen_projects = set()
-        for row in context_rows:
-            if row["projectId"] not in seen_projects:
-                seen_projects.add(row["projectId"])
-                context_parts.append(f"Project: {row['projectTitle']}")
-            context_parts.append(f"- ({row['sourceTable']}) {row['textContent']}")
-        context = "\n".join(context_parts)
-    else:
-        context = "No relevant projects found."
+# ─── SQL queries (tool executor) ──────────────────────────────────────────────
 
-    system_prompt = f"""You are a helpful assistant for a project management app called ProjectHub.
-You can only access the user's own projects.
+async def run_structured_query(
+    user_id: str,
+    intent: str,
+    project_name: str | None,
+    status: str | None,
+    priority: str | None
+) -> str:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        if intent == "get_project_details":
+            if project_name:
+                rows = await conn.fetch("""
+                    SELECT p.title, p.description, p.visibility, p."createdAt",
+                           COUNT(DISTINCT t.id) as task_count,
+                           COUNT(DISTINCT n.id) as note_count
+                    FROM "Project" p
+                    LEFT JOIN "Task" t ON t."projectId" = p.id
+                    LEFT JOIN "Note" n ON n."projectId" = p.id
+                    WHERE p."ownerId" = $1 AND LOWER(p.title) LIKE LOWER($2)
+                    GROUP BY p.id, p.title, p.description, p.visibility, p."createdAt"
+                """, user_id, f"%{project_name}%")
+            else:
+                rows = await conn.fetch("""
+                    SELECT p.title, p.description, p.visibility, p."createdAt",
+                           COUNT(DISTINCT t.id) as task_count,
+                           COUNT(DISTINCT n.id) as note_count
+                    FROM "Project" p
+                    LEFT JOIN "Task" t ON t."projectId" = p.id
+                    LEFT JOIN "Note" n ON n."projectId" = p.id
+                    WHERE p."ownerId" = $1
+                    GROUP BY p.id, p.title, p.description, p.visibility, p."createdAt"
+                    ORDER BY p."createdAt" DESC
+                """, user_id)
+            if not rows:
+                return "No projects found."
+            parts = []
+            for r in rows:
+                parts.append(
+                    f"Project: {r['title']} | {r['task_count']} tasks, {r['note_count']} notes"
+                    f" | Visibility: {r['visibility']} | Created: {r['createdAt'].date()}"
+                )
+                if r["description"]:
+                    parts.append(f"  Description: {r['description']}")
+            return "\n".join(parts)
 
-Rules:
-- Answer based ONLY on the context provided below
-- If the context doesn't contain enough information, say so honestly
-- If no relevant project was found, tell the user clearly
-- Reference project names directly in your answer
-- Be concise and specific
+        elif intent in ("list_tasks_by_status", "list_tasks_by_priority"):
+            params = [user_id]
+            filters = ['p."ownerId" = $1']
+            if status:
+                params.append(status)
+                filters.append(f't.status = ${len(params)}')
+            if priority:
+                params.append(priority)
+                filters.append(f't.priority = ${len(params)}')
+            if project_name:
+                params.append(f"%{project_name}%")
+                filters.append(f'LOWER(p.title) LIKE LOWER(${len(params)})')
+            where = " AND ".join(filters)
+            rows = await conn.fetch(f"""
+                SELECT t."taskNumber", t.title, t.status, t.priority, t."dueDate", p.title as project
+                FROM "Task" t
+                JOIN "Project" p ON p.id = t."projectId"
+                WHERE {where}
+                ORDER BY t."taskNumber" DESC
+                LIMIT 20
+            """, *params)
+            if not rows:
+                return "No tasks found matching those filters."
+            return "\n".join(
+                f"[{r['project']}] #{r['taskNumber']} {r['title']} — {r['status']} / {r['priority']}"
+                + (f" (due {r['dueDate'].date()})" if r["dueDate"] else "")
+                for r in rows
+            )
 
-Formatting:
-- Responses are rendered with react-markdown (GitHub Flavored Markdown), so markdown displays properly
-- Use **bold** for project names, task names, and key terms
-- Use bullet lists (- item) when enumerating tasks, features, or notes
-- Use `inline code` for technical terms, slugs, or IDs
-- Use ## headings only when the response is long enough to need clear sections
-- Use GFM tables for structured comparisons when appropriate
-- Do NOT wrap the entire response in a code block
-- Do NOT use markdown for short one-liner answers — plain text is fine there
+        elif intent == "count_tasks":
+            params = [user_id]
+            filters = ['p."ownerId" = $1']
+            if status:
+                params.append(status)
+                filters.append(f't.status = ${len(params)}')
+            if priority:
+                params.append(priority)
+                filters.append(f't.priority = ${len(params)}')
+            if project_name:
+                params.append(f"%{project_name}%")
+                filters.append(f'LOWER(p.title) LIKE LOWER(${len(params)})')
+            where = " AND ".join(filters)
+            row = await conn.fetchrow(f"""
+                SELECT COUNT(*) as total
+                FROM "Task" t
+                JOIN "Project" p ON p.id = t."projectId"
+                WHERE {where}
+            """, *params)
+            label_parts = []
+            if status: label_parts.append(status)
+            if priority: label_parts.append(priority)
+            if project_name: label_parts.append(f"in {project_name}")
+            label = " ".join(label_parts) if label_parts else "total"
+            return f"{row['total']} {label} task(s) found."
 
-Context from user's projects:
-{context}"""
+        elif intent == "get_notes_for_project":
+            params = [user_id]
+            filters = ['p."ownerId" = $1']
+            if project_name:
+                params.append(f"%{project_name}%")
+                filters.append(f'LOWER(p.title) LIKE LOWER(${len(params)})')
+            where = " AND ".join(filters)
+            rows = await conn.fetch(f"""
+                SELECT n.title, n."createdAt", p.title as project
+                FROM "Note" n
+                JOIN "Project" p ON p.id = n."projectId"
+                WHERE {where}
+                ORDER BY n."createdAt" DESC
+                LIMIT 20
+            """, *params)
+            if not rows:
+                return "No notes found."
+            return "\n".join(
+                f"[{r['project']}] {r['title']} (created {r['createdAt'].date()})"
+                for r in rows
+            )
 
-    messages = [{"role": "system", "content": system_prompt}]
-    messages += history[-10:]
-    messages.append({"role": "user", "content": message})
-    return messages
+    return "Unknown query intent."
 
-async def extract_search_query(message: str, model: str) -> str:
-    async with httpx.AsyncClient(timeout=30) as client:
+# ─── Tool dispatcher ──────────────────────────────────────────────────────────
+
+async def execute_tool(name: str, args: dict, user_id: str) -> tuple[str, dict]:
+    """Execute a named tool. Returns (result_string, log_info)."""
+    if name == "search_project_data":
+        query = args.get("query", "")
+        limit = min(int(args.get("limit", 5)), 10)
+        embedding = await get_embedding(query)
+        rows = await search_user_projects(user_id, embedding, limit)
+        relevant = [r for r in rows if r["similarity"] >= SIMILARITY_THRESHOLD]
+        if not relevant:
+            return "No relevant results found for that query.", {"sources": [], "scores": [], "count": 0}
+        parts = []
+        seen: set = set()
+        for r in relevant:
+            if r["projectId"] not in seen:
+                seen.add(r["projectId"])
+                parts.append(f"Project: {r['projectTitle']}")
+            parts.append(f"- ({r['sourceTable']}) {r['textContent']}")
+        log_info = {
+            "sources": list({r["sourceTable"] for r in relevant}),
+            "scores": [round(r["similarity"], 4) for r in relevant],
+            "count": len(relevant)
+        }
+        return "\n".join(parts), log_info
+
+    elif name == "query_structured_data":
+        result = await run_structured_query(
+            user_id=user_id,
+            intent=args.get("intent", ""),
+            project_name=args.get("project_name"),
+            status=args.get("status"),
+            priority=args.get("priority")
+        )
+        return result, {"sources": ["structured_query"], "scores": [], "count": 0}
+
+    return f"Unknown tool: {name}", {}
+
+# ─── Ollama: non-streaming WITH tools (agentic decision loop) ─────────────────
+
+async def call_ollama_with_tools(messages: list[dict], model: str, thinking_enabled: bool) -> dict:
+    async with httpx.AsyncClient(timeout=60) as client:
         res = await client.post(f"{OLLAMA_URL}/api/chat", json={
             "model": model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": """Extract the core search intent from the user message for a project management app.
-
-Rules:
-- Return ONLY the search terms, nothing else
-- Remove all greetings, filler words, and pleasantries
-- Keep project names, technical terms, and specific nouns
-- If asking about tasks/notes/status, include those keywords
-- If no clear project intent, return the core topic only
-
-Examples:
-"Hello! Can you tell me about FitFlow?" → "FitFlow project"
-"What high priority tasks do I have in ProjectHub?" → "ProjectHub high priority tasks"
-"How are you? Tell me about my machine learning project" → "machine learning project"
-"What did I write in my notes about authentication?" → "authentication notes"
-"Give me a summary of everything in EcoTrack" → "EcoTrack project tasks notes summary"
-"""
-                },
-                {"role": "user", "content": message}
-            ],
+            "messages": messages,
+            "tools": TOOLS,
             "stream": False,
-            "think": False      # ← no thinking needed for extraction, saves time
+            "think": thinking_enabled
         })
-        return res.json()["message"]["content"].strip()
+        return res.json()["message"]
+
+# ─── Ollama: streaming WITHOUT tools (final answer only) ──────────────────────
 
 async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool):
     async with httpx.AsyncClient(timeout=120) as client:
@@ -119,26 +329,23 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
             "model": model,
             "messages": messages,
             "stream": True,
-            "think": thinking_enabled       # ← dynamic based on request
+            "think": thinking_enabled
         }) as res:
             async for line in res.aiter_lines():
                 if line:
                     data = json.loads(line)
                     msg = data.get("message", {})
 
-                    # Sentinel lines are wrapped in \n so they're always isolated
-                    # even if batched with adjacent content in the same TCP packet.
-                    # Content tokens are yielded as-is — adding \n would strip
-                    # leading newlines from tokens like "\n1." causing "12" corruption.
+                    # Thinking tokens — wrapped in \x1e so they're always isolated
                     if thinking := msg.get("thinking"):
                         yield f"\x1e__THINKING__{json.dumps(thinking)}\x1e"
                         continue
 
-                    # Yield content tokens verbatim — preserve embedded newlines
+                    # Content tokens — yielded verbatim to preserve embedded newlines
                     if token := msg.get("content"):
                         yield token
 
-                    # Final chunk — capture metrics
+                    # Final chunk — capture and emit metrics
                     if data.get("done"):
                         eval_duration = data.get("eval_duration", 1)
                         eval_count = data.get("eval_count", 0)
@@ -153,46 +360,85 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                         yield f"\x1e__METRICS__{json.dumps(metrics)}\x1e"
                         break
 
+# ─── Chat route ───────────────────────────────────────────────────────────────
+
 @router.post("/")
 async def chat(req: ChatRequest):
     try:
-        # 1. Extract core search query
-        search_query = await extract_search_query(req.message, req.modelName)
+        messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
+        messages += req.history[-10:]
+        messages.append({"role": "user", "content": req.message})
 
-        # 2. Embed the extracted query
-        query_embedding = await get_embedding(search_query)
+        # Accumulated log data across all tool calls in this request
+        all_sources: list[str] = []
+        all_scores: list[float] = []
+        total_result_count = 0
+        tool_calls_summary: list[str] = []
 
-        # 3. Search across user's projects
-        context_rows = await search_user_projects(req.userId, query_embedding)
-
-        # 4. Filter by similarity threshold
-        SIMILARITY_THRESHOLD = 0.4
-        relevant_rows = [r for r in context_rows if r["similarity"] >= SIMILARITY_THRESHOLD]
-
-        # 5. Build prompt
-        messages = build_prompt(req.message, relevant_rows, req.history)
-
-        context_sources = list({r["sourceTable"] for r in relevant_rows})
-        similarity_scores = [round(r["similarity"], 4) for r in relevant_rows]
-
-        # 6. Stream response, intercept sentinels
         async def response_stream():
+            nonlocal all_sources, all_scores, total_result_count, tool_calls_summary
             thinking_buffer = ""
+
+            # ── Agentic tool-calling loop ──────────────────────────────────────
+            for _ in range(MAX_TOOL_ITERATIONS):
+                response_msg = await call_ollama_with_tools(
+                    messages, req.modelName, req.thinkingEnabled
+                )
+
+                # Thinking during the tool-decision phase — yield immediately
+                if thinking := response_msg.get("thinking"):
+                    thinking_buffer += thinking
+                    yield f"\x1e__THINKING__{json.dumps(thinking)}\x1e"
+
+                tool_calls = response_msg.get("tool_calls")
+                if not tool_calls:
+                    # LLM decided it has enough context — exit loop and stream answer
+                    break
+
+                # Append the assistant message (with tool_calls) to history
+                messages.append(response_msg)
+
+                for call in tool_calls:
+                    fn = call.get("function", {})
+                    name = fn.get("name", "")
+                    args = fn.get("arguments", {})
+                    if isinstance(args, str):
+                        args = json.loads(args)
+
+                    # Emit __TOOLCALL__ BEFORE executing — the frontend shows
+                    # "Searching your projects..." the moment the LLM decides to search,
+                    # not after the result comes back.
+                    yield f"\x1e__TOOLCALL__{json.dumps({'name': name, 'args': args})}\x1e"
+
+                    result, log_info = await execute_tool(name, args, req.userId)
+
+                    all_sources.extend(log_info.get("sources", []))
+                    all_scores.extend(log_info.get("scores", []))
+                    total_result_count += log_info.get("count", 0)
+                    tool_calls_summary.append(f"{name}({json.dumps(args)})")
+
+                    messages.append({
+                        "role": "tool",
+                        "name": name,
+                        "content": result
+                    })
+
+            # ── Final streaming answer (tools not attached — LLM just responds) ─
             async for chunk in stream_ollama(messages, req.modelName, req.thinkingEnabled):
-                if chunk.startswith("__THINKING__"):
-                    thinking_buffer += chunk.replace("__THINKING__", "")
-                    yield chunk     # still forward to frontend for collapsed display
-                elif chunk.startswith("__METRICS__"):
-                    metrics_data = json.loads(chunk.replace("__METRICS__", ""))
-                    # Estimate thinking tokens from buffer length
+                if chunk.startswith("\x1e__THINKING__"):
+                    inner = chunk.strip("\x1e").replace("__THINKING__", "")
+                    thinking_buffer += json.loads(inner)
+                    yield chunk
+                elif chunk.startswith("\x1e__METRICS__"):
+                    metrics_data = json.loads(chunk.strip("\x1e").replace("__METRICS__", ""))
                     thinking_tokens = len(thinking_buffer.split()) if thinking_buffer else 0
                     asyncio.create_task(log_chat(
                         user_id=req.userId,
                         query=req.message,
-                        extracted_query=search_query,
-                        context_sources=context_sources,
-                        similarity_scores=similarity_scores,
-                        result_count=len(relevant_rows),
+                        extracted_query="; ".join(tool_calls_summary) or req.message,
+                        context_sources=list(set(all_sources)),
+                        similarity_scores=all_scores,
+                        result_count=total_result_count,
                         prompt_tokens=metrics_data.get("prompt_tokens", 0),
                         completion_tokens=metrics_data.get("completion_tokens", 0),
                         thinking_tokens=thinking_tokens,
@@ -202,6 +448,7 @@ async def chat(req: ChatRequest):
                         model_name=req.modelName,
                         thinking_enabled=req.thinkingEnabled
                     ))
+                    yield chunk
                 else:
                     yield chunk
 

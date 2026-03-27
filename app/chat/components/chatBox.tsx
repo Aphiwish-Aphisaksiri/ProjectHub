@@ -3,17 +3,52 @@ import { useState, useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
+type ToolCall = {
+    name: string
+    args: Record<string, unknown>
+    done: boolean
+}
+
 type Message = {
     role: "user" | "assistant" | "error"
     content: string
     thinkingContent?: string
     modelName?: string
     thinkingEnabled?: boolean
+    toolCalls?: ToolCall[]
 }
 
 type OllamaModel = {
     name: string
     sizeGb: number
+}
+
+function getToolLabel(name: string, args: Record<string, unknown>): string {
+    const suffix =
+        typeof args.query === "string" ? ` — "${args.query}"`
+        : typeof args.intent === "string" ? ` — ${args.intent.replace(/_/g, " ")}`
+        : ""
+    if (name === "search_project_data") return `Searching your projects${suffix}`
+    if (name === "query_structured_data") return `Querying project data${suffix}`
+    return name
+}
+
+function ToolCallBlock({ toolCalls }: { toolCalls: ToolCall[] }) {
+    return (
+        <div className="mb-2 space-y-1.5">
+            {toolCalls.map((call, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                    {call.done
+                        ? <span className="text-tertiary text-[10px] leading-none">✓</span>
+                        : <span className="inline-block w-2.5 h-2.5 border border-tertiary/70 border-t-transparent rounded-full animate-spin shrink-0" />
+                    }
+                    <span className={call.done ? "text-lightgrey/40" : "text-lightgrey/60"}>
+                        {getToolLabel(call.name, call.args)}{call.done ? "" : "..."}
+                    </span>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 function ThinkingIndicator() {
@@ -196,14 +231,28 @@ export default function ChatBox({ userId }: { userId: string }) {
                 }
                 return updated
             })
-        } else if (chunk.startsWith("__METRICS__")) {
-            // Metrics handled server-side, ignore on frontend
-        } else {
+        } else if (chunk.startsWith("__TOOLCALL__")) {
+            // Emitted BEFORE the tool executes — show indicator immediately
+            const call = JSON.parse(chunk.replace("__TOOLCALL__", "")) as { name: string; args: Record<string, unknown> }
             setMessages(prev => {
                 const updated = [...prev]
                 const last = updated[updated.length - 1]
                 updated[updated.length - 1] = {
                     ...last,
+                    toolCalls: [...(last.toolCalls ?? []), { name: call.name, args: call.args, done: false }],
+                }
+                return updated
+            })
+        } else if (chunk.startsWith("__METRICS__")) {
+            // Metrics handled server-side, ignore on frontend
+        } else {
+            // First content token — mark all in-flight tool calls as done
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    toolCalls: last.toolCalls?.map(tc => ({ ...tc, done: true })),
                     content: last.content + chunk,
                 }
                 return updated
@@ -242,8 +291,12 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {msg.role === "assistant" && msg.thinkingContent && (
                                 <ThinkingBlock content={msg.thinkingContent} />
                             )}
+                            {/* Tool call indicators — show as soon as LLM decides to search */}
+                            {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
+                                <ToolCallBlock toolCalls={msg.toolCalls} />
+                            )}
                             {/* Message content */}
-                            {msg.role === "assistant" && msg.content === "" && loading
+                            {msg.role === "assistant" && msg.content === "" && loading && !msg.toolCalls?.length
                                 ? <ThinkingIndicator />
                                 : msg.role === "assistant"
                                 ? <ReactMarkdown
