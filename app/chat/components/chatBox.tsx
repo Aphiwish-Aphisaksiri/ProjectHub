@@ -3,17 +3,54 @@ import { useState, useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
+type ToolCall = {
+    name: string
+    args: Record<string, unknown>
+    done: boolean
+}
+
 type Message = {
     role: "user" | "assistant" | "error"
     content: string
     thinkingContent?: string
     modelName?: string
     thinkingEnabled?: boolean
+    toolCalls?: ToolCall[]
+    notices?: string[]
 }
 
 type OllamaModel = {
     name: string
     sizeGb: number
+    thinkingSupported?: boolean
+}
+
+function getToolLabel(name: string, args: Record<string, unknown>): string {
+    const suffix =
+        typeof args.query === "string" ? ` — "${args.query}"`
+        : typeof args.intent === "string" ? ` — ${args.intent.replace(/_/g, " ")}`
+        : ""
+    if (name === "search_project_data") return `Searching your projects${suffix}`
+    if (name === "query_structured_data") return `Querying project data${suffix}`
+    return name
+}
+
+function ToolCallBlock({ toolCalls }: { toolCalls: ToolCall[] }) {
+    return (
+        <div className="mb-2 space-y-1.5">
+            {toolCalls.map((call, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                    {call.done
+                        ? <span className="text-tertiary text-[10px] leading-none">✓</span>
+                        : <span className="inline-block w-2.5 h-2.5 border border-tertiary/70 border-t-transparent rounded-full animate-spin shrink-0" />
+                    }
+                    <span className={call.done ? "text-lightgrey/40" : "text-lightgrey/60"}>
+                        {getToolLabel(call.name, call.args)}{call.done ? "" : "..."}
+                    </span>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 function ThinkingIndicator() {
@@ -47,6 +84,21 @@ function ThinkingBlock({ content }: { content: string }) {
     )
 }
 
+function NoticeBlock({ notices }: { notices: string[] }) {
+    return (
+        <div className="mb-2 space-y-1.5">
+            {notices.map((notice, index) => (
+                <div
+                    key={`${notice}-${index}`}
+                    className="rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100/90"
+                >
+                    {notice}
+                </div>
+            ))}
+        </div>
+    )
+}
+
 function ModelBadge({ modelName }: { modelName: string }) {
     // Show just the model name without the tag e.g. "qwen3.5:9b" → "qwen3.5 9b"
     const display = modelName.replace(":", " ")
@@ -67,6 +119,7 @@ export default function ChatBox({ userId }: { userId: string }) {
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
+    const selectedModelMeta = models.find(model => model.name === selectedModel)
 
     // Clear messages when userId changes
     useEffect(() => {
@@ -82,6 +135,12 @@ export default function ChatBox({ userId }: { userId: string }) {
     useEffect(() => {
         return () => { abortControllerRef.current?.abort() }
     }, [])
+
+    useEffect(() => {
+        if (selectedModelMeta?.thinkingSupported === false && thinkingEnabled) {
+            setThinkingEnabled(false)
+        }
+    }, [selectedModelMeta, thinkingEnabled])
 
     // Fetch available models from backend
     useEffect(() => {
@@ -132,9 +191,17 @@ export default function ChatBox({ userId }: { userId: string }) {
             })
 
             if (!res.ok) {
-                const errorMsg = res.status === 401
+                let errorMsg = res.status === 401
                     ? "Please sign in to use the chat."
                     : "Something went wrong. Please try again."
+
+                try {
+                    const errorBody = await res.json()
+                    if (typeof errorBody?.detail === "string" && errorBody.detail.trim()) {
+                        errorMsg = errorBody.detail
+                    }
+                } catch {}
+
                 setMessages(prev => {
                     const updated = [...prev]
                     updated[updated.length - 1] = { role: "error", content: errorMsg }
@@ -196,14 +263,39 @@ export default function ChatBox({ userId }: { userId: string }) {
                 }
                 return updated
             })
-        } else if (chunk.startsWith("__METRICS__")) {
-            // Metrics handled server-side, ignore on frontend
-        } else {
+        } else if (chunk.startsWith("__NOTICE__")) {
+            const notice = JSON.parse(chunk.replace("__NOTICE__", "")) as string
             setMessages(prev => {
                 const updated = [...prev]
                 const last = updated[updated.length - 1]
                 updated[updated.length - 1] = {
                     ...last,
+                    notices: [...(last.notices ?? []), notice],
+                }
+                return updated
+            })
+        } else if (chunk.startsWith("__TOOLCALL__")) {
+            // Emitted BEFORE the tool executes — show indicator immediately
+            const call = JSON.parse(chunk.replace("__TOOLCALL__", "")) as { name: string; args: Record<string, unknown> }
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    toolCalls: [...(last.toolCalls ?? []), { name: call.name, args: call.args, done: false }],
+                }
+                return updated
+            })
+        } else if (chunk.startsWith("__METRICS__")) {
+            // Metrics handled server-side, ignore on frontend
+        } else {
+            // First content token — mark all in-flight tool calls as done
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    toolCalls: last.toolCalls?.map(tc => ({ ...tc, done: true })),
                     content: last.content + chunk,
                 }
                 return updated
@@ -242,8 +334,15 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {msg.role === "assistant" && msg.thinkingContent && (
                                 <ThinkingBlock content={msg.thinkingContent} />
                             )}
+                            {msg.role === "assistant" && msg.notices && msg.notices.length > 0 && (
+                                <NoticeBlock notices={msg.notices} />
+                            )}
+                            {/* Tool call indicators — show as soon as LLM decides to search */}
+                            {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
+                                <ToolCallBlock toolCalls={msg.toolCalls} />
+                            )}
                             {/* Message content */}
-                            {msg.role === "assistant" && msg.content === "" && loading
+                            {msg.role === "assistant" && msg.content === "" && loading && !msg.toolCalls?.length
                                 ? <ThinkingIndicator />
                                 : msg.role === "assistant"
                                 ? <ReactMarkdown
@@ -299,8 +398,12 @@ export default function ChatBox({ userId }: { userId: string }) {
 
                     {/* Thinking toggle */}
                     <button
-                        onClick={() => setThinkingEnabled(prev => !prev)}
-                        disabled={loading}
+                        onClick={() => {
+                            if (selectedModelMeta?.thinkingSupported === false) return
+                            setThinkingEnabled(prev => !prev)
+                        }}
+                        disabled={loading || selectedModelMeta?.thinkingSupported === false}
+                        title={selectedModelMeta?.thinkingSupported === false ? "This model does not support thinking mode reliably." : undefined}
                         className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50 ${
                             thinkingEnabled
                                 ? "bg-tertiary/20 border-tertiary/40 text-tertiary"
@@ -308,7 +411,7 @@ export default function ChatBox({ userId }: { userId: string }) {
                         }`}
                     >
                         <span className="text-[10px]">✦</span>
-                        Thinking {thinkingEnabled ? "on" : "off"}
+                        Thinking {selectedModelMeta?.thinkingSupported === false ? "unsupported" : thinkingEnabled ? "on" : "off"}
                     </button>
                 </div>
 

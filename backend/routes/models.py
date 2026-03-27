@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import httpx
 import os
+from ollama_capabilities import model_supports_thinking
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -17,7 +18,8 @@ async def get_models():
                 {
                     "name": m["name"],
                     "size": m["size"],
-                    "sizeGb": round(m["size"] / 1_073_741_824, 1)
+                    "sizeGb": round(m["size"] / 1_073_741_824, 1),
+                    "thinkingSupported": model_supports_thinking(m["name"]),
                 }
                 for m in data.get("models", [])
             ]
