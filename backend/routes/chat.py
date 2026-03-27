@@ -438,6 +438,61 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                         yield f"\x1e__METRICS__{json.dumps(metrics)}\x1e"
                         break
 
+
+def build_query_extractor_messages(message: str, history: list[dict]) -> list[dict]:
+    """Build a compact prompt that asks the model to produce a semantic search query."""
+    extraction_system = """You extract search queries for semantic retrieval in a project management app.
+Given a user's latest message and recent conversation history, output a single concise search query
+that will help retrieve the most relevant projects, tasks, and notes.
+
+Rules:
+- Focus on key entities, intent, and constraints (status, priority, due dates, project names)
+- Prefer natural language query terms, not SQL
+- Keep it short (max 18 words)
+- If the user asks a follow-up, include the missing context from history
+- Output ONLY valid JSON in this exact shape: {\"query\": \"...\"}
+- Do not include markdown or any extra keys"""
+
+    history_summary = history[-10:]
+    return [
+        {"role": "system", "content": extraction_system},
+        {
+            "role": "user",
+            "content": json.dumps({
+                "latest_message": message,
+                "history": history_summary,
+            }, ensure_ascii=False)
+        }
+    ]
+
+
+async def extract_semantic_query_with_llm(message: str, history: list[dict], model: str) -> str:
+    """Use the selected model to derive a retrieval-friendly semantic query."""
+    extractor_messages = build_query_extractor_messages(message, history)
+    fallback = message.strip()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            res = await client.post(f"{OLLAMA_URL}/api/chat", json={
+                "model": model,
+                "messages": extractor_messages,
+                "stream": False,
+                "think": False,
+            })
+            raw_content = res.json().get("message", {}).get("content", "").strip()
+
+        if not raw_content:
+            return fallback
+
+        # Prefer strict JSON output; tolerate plain-text fallback if parsing fails.
+        try:
+            parsed = json.loads(raw_content)
+            query = str(parsed.get("query", "")).strip()
+            return query or fallback
+        except json.JSONDecodeError:
+            return raw_content[:200].strip() or fallback
+    except Exception:
+        return fallback
+
 # ─── Chat route ───────────────────────────────────────────────────────────────
 
 @router.post("/")
@@ -454,7 +509,6 @@ async def chat(req: ChatRequest):
             thinking_buffer = ""
 
             uses_tools = await model_supports_tools(req.modelName)
-            print(f"Model '{req.modelName}' tool-calling capability: {uses_tools}")
 
             if uses_tools:
                 # ── Agentic tool-calling loop (tool-capable models) ────────────
@@ -502,18 +556,24 @@ async def chat(req: ChatRequest):
 
             else:
                 # ── RAG fallback (models without tool-calling capability) ───────
+                extracted_query = await extract_semantic_query_with_llm(
+                    req.message,
+                    req.history,
+                    req.modelName
+                )
+
                 # Emit the indicator immediately so the frontend shows "Searching..."
                 # while the embedding + vector search runs — same UX as tools path.
-                yield f"\x1e__TOOLCALL__{json.dumps({'name': 'search_project_data', 'args': {'query': req.message}})}\x1e"
+                yield f"\x1e__TOOLCALL__{json.dumps({'name': 'search_project_data', 'args': {'query': extracted_query}})}\x1e"
 
-                query_embedding = await get_embedding(req.message)
+                query_embedding = await get_embedding(extracted_query)
                 context_rows = await search_user_projects(req.userId, query_embedding)
                 relevant = [r for r in context_rows if r["similarity"] >= SIMILARITY_THRESHOLD]
 
                 all_sources = list({r["sourceTable"] for r in relevant})
                 all_scores = [round(r["similarity"], 4) for r in relevant]
                 total_result_count = len(relevant)
-                tool_calls_summary = [f"rag_fallback(query={req.message[:60]})"]
+                tool_calls_summary = [f"rag_fallback(extracted_query={extracted_query[:60]})"]
 
                 final_messages = build_rag_messages(req.message, relevant, req.history)
 
