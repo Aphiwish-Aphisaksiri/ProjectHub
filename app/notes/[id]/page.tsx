@@ -37,13 +37,13 @@ export default async function NoteDetailPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-4">
                         <div className="max-w-4xl">
                             <Link href={back ?? "/notes"} className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4">
                                 <FiArrowLeft /> {back ? "Back to Project Notes" : "Back to Notes"}
                             </Link>
 
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-center gap-4">
                                 <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
                                     <FiFileText className="text-tertiary" size={38} />
                                 </span>

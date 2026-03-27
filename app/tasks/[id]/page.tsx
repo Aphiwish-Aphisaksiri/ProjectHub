@@ -103,7 +103,7 @@ export default async function TaskDetailPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-4">
                         <div className="max-w-4xl">
                             <Link
                                 href={backHref}
@@ -112,7 +112,7 @@ export default async function TaskDetailPage({
                                 <FiArrowLeft /> {backLabel}
                             </Link>
 
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-start md:items-center gap-4">
                                 <span className="shrink-0 rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
                                     <FiCheckSquare className="text-tertiary" size={38} />
                                 </span>
