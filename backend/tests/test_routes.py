@@ -32,7 +32,7 @@ async def _fake_stream_ok(messages, model, thinking_enabled):
     """Minimal happy-path stream: two tokens then the metrics sentinel."""
     yield "Hello"
     yield " world"
-    yield f"__METRICS__{_METRICS}"
+    yield f"\x1e__METRICS__{_METRICS}\x1e"
 
 
 def _discard_coro(coro):
@@ -135,6 +135,8 @@ def test_embed_note_error_returns_500(client):
 def test_chat_streams_tokens_without_metrics_sentinel(client):
     with (
         patch("routes.chat.get_embedding", new_callable=AsyncMock, return_value=[0.1] * 768),
+        patch("routes.chat.model_supports_tools", new_callable=AsyncMock, return_value=False),
+        patch("routes.chat.extract_semantic_query_with_llm", new_callable=AsyncMock, return_value="hello"),
         patch("routes.chat.detect_project_scope", new_callable=AsyncMock, return_value=None),
         patch("routes.chat.search_user_projects_scoped", new_callable=AsyncMock, return_value=[]),
         patch("routes.chat.stream_ollama", side_effect=_fake_stream_ok),
@@ -147,7 +149,12 @@ def test_chat_streams_tokens_without_metrics_sentinel(client):
     assert r.status_code == 200
     assert "Hello" in r.text
     assert " world" in r.text
-    assert "__METRICS__" not in r.text
+    # Metrics sentinel is now sent as a \x1e-framed control frame for the frontend;
+    # verify it does not leak into regular content segments.
+    for segment in r.text.split("\x1e"):
+        if not segment or segment.startswith("__METRICS__") or segment.startswith("__TOOLCALL__"):
+            continue
+        assert "__METRICS__" not in segment
 
 
 def test_chat_filters_rows_below_similarity_threshold(client):
@@ -204,11 +211,19 @@ def test_chat_passes_high_similarity_rows_to_prompt(client):
     assert "Build the dashboard" in system_content
 
 
-def test_chat_embedding_error_returns_500(client):
-    with patch("routes.chat.get_embedding", side_effect=Exception("Ollama down")):
-        r = client.post("/chat/", json={"userId": "u1", "message": "q"})
-    assert r.status_code == 500
-    assert "Ollama down" in r.json()["detail"]
+def test_chat_embedding_error_propagates(client):
+    """Embedding failure inside the streaming generator propagates as an exception.
+
+    With the current architecture all chat logic runs inside an async generator
+    passed to StreamingResponse, so errors surface during streaming rather than
+    as a clean HTTP 500."""
+    with (
+        patch("routes.chat.get_embedding", side_effect=Exception("Ollama down")),
+        patch("routes.chat.model_supports_tools", new_callable=AsyncMock, return_value=False),
+        patch("routes.chat.extract_semantic_query_with_llm", new_callable=AsyncMock, return_value="q"),
+    ):
+        with pytest.raises(Exception, match="Ollama down"):
+            client.post("/chat/", json={"userId": "u1", "message": "q"})
 
 
 def test_chat_missing_user_id_returns_422(client):

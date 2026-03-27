@@ -67,6 +67,7 @@ class TestChunkText:
 # ─── get_embedding ────────────────────────────────────────────────────────────
 
 class TestGetEmbedding:
+    @pytest.mark.asyncio
     async def test_returns_embedding_list(self):
         fake_embedding = [0.1] * 768
         with respx.mock:
@@ -76,6 +77,7 @@ class TestGetEmbedding:
             result = await get_embedding("hello world")
         assert result == fake_embedding
 
+    @pytest.mark.asyncio
     async def test_sends_correct_model_and_prompt(self):
         with respx.mock:
             route = respx.post("http://ollama:11434/api/embeddings").mock(
@@ -86,6 +88,7 @@ class TestGetEmbedding:
         assert body["model"] == "nomic-embed-text"
         assert body["prompt"] == "my search query"
 
+    @pytest.mark.asyncio
     async def test_empty_string_is_forwarded(self):
         with respx.mock:
             route = respx.post("http://ollama:11434/api/embeddings").mock(
