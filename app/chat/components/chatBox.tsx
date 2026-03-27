@@ -16,11 +16,13 @@ type Message = {
     modelName?: string
     thinkingEnabled?: boolean
     toolCalls?: ToolCall[]
+    notices?: string[]
 }
 
 type OllamaModel = {
     name: string
     sizeGb: number
+    thinkingSupported?: boolean
 }
 
 function getToolLabel(name: string, args: Record<string, unknown>): string {
@@ -82,6 +84,21 @@ function ThinkingBlock({ content }: { content: string }) {
     )
 }
 
+function NoticeBlock({ notices }: { notices: string[] }) {
+    return (
+        <div className="mb-2 space-y-1.5">
+            {notices.map((notice, index) => (
+                <div
+                    key={`${notice}-${index}`}
+                    className="rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs text-amber-100/90"
+                >
+                    {notice}
+                </div>
+            ))}
+        </div>
+    )
+}
+
 function ModelBadge({ modelName }: { modelName: string }) {
     // Show just the model name without the tag e.g. "qwen3.5:9b" → "qwen3.5 9b"
     const display = modelName.replace(":", " ")
@@ -102,6 +119,7 @@ export default function ChatBox({ userId }: { userId: string }) {
 
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const abortControllerRef = useRef<AbortController | null>(null)
+    const selectedModelMeta = models.find(model => model.name === selectedModel)
 
     // Clear messages when userId changes
     useEffect(() => {
@@ -117,6 +135,12 @@ export default function ChatBox({ userId }: { userId: string }) {
     useEffect(() => {
         return () => { abortControllerRef.current?.abort() }
     }, [])
+
+    useEffect(() => {
+        if (selectedModelMeta?.thinkingSupported === false && thinkingEnabled) {
+            setThinkingEnabled(false)
+        }
+    }, [selectedModelMeta, thinkingEnabled])
 
     // Fetch available models from backend
     useEffect(() => {
@@ -167,9 +191,17 @@ export default function ChatBox({ userId }: { userId: string }) {
             })
 
             if (!res.ok) {
-                const errorMsg = res.status === 401
+                let errorMsg = res.status === 401
                     ? "Please sign in to use the chat."
                     : "Something went wrong. Please try again."
+
+                try {
+                    const errorBody = await res.json()
+                    if (typeof errorBody?.detail === "string" && errorBody.detail.trim()) {
+                        errorMsg = errorBody.detail
+                    }
+                } catch {}
+
                 setMessages(prev => {
                     const updated = [...prev]
                     updated[updated.length - 1] = { role: "error", content: errorMsg }
@@ -228,6 +260,17 @@ export default function ChatBox({ userId }: { userId: string }) {
                 updated[updated.length - 1] = {
                     ...last,
                     thinkingContent: (last.thinkingContent ?? "") + thought,
+                }
+                return updated
+            })
+        } else if (chunk.startsWith("__NOTICE__")) {
+            const notice = JSON.parse(chunk.replace("__NOTICE__", "")) as string
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    notices: [...(last.notices ?? []), notice],
                 }
                 return updated
             })
@@ -291,6 +334,9 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {msg.role === "assistant" && msg.thinkingContent && (
                                 <ThinkingBlock content={msg.thinkingContent} />
                             )}
+                            {msg.role === "assistant" && msg.notices && msg.notices.length > 0 && (
+                                <NoticeBlock notices={msg.notices} />
+                            )}
                             {/* Tool call indicators — show as soon as LLM decides to search */}
                             {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
                                 <ToolCallBlock toolCalls={msg.toolCalls} />
@@ -352,8 +398,12 @@ export default function ChatBox({ userId }: { userId: string }) {
 
                     {/* Thinking toggle */}
                     <button
-                        onClick={() => setThinkingEnabled(prev => !prev)}
-                        disabled={loading}
+                        onClick={() => {
+                            if (selectedModelMeta?.thinkingSupported === false) return
+                            setThinkingEnabled(prev => !prev)
+                        }}
+                        disabled={loading || selectedModelMeta?.thinkingSupported === false}
+                        title={selectedModelMeta?.thinkingSupported === false ? "This model does not support thinking mode reliably." : undefined}
                         className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50 ${
                             thinkingEnabled
                                 ? "bg-tertiary/20 border-tertiary/40 text-tertiary"
@@ -361,7 +411,7 @@ export default function ChatBox({ userId }: { userId: string }) {
                         }`}
                     >
                         <span className="text-[10px]">✦</span>
-                        Thinking {thinkingEnabled ? "on" : "off"}
+                        Thinking {selectedModelMeta?.thinkingSupported === false ? "unsupported" : thinkingEnabled ? "on" : "off"}
                     </button>
                 </div>
 

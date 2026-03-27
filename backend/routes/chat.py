@@ -3,6 +3,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from embeddings import get_embedding
 from db import get_pool, log_chat
+from ollama_capabilities import (
+    model_supports_tools_by_prefix,
+    model_supports_thinking as ollama_model_supports_thinking,
+)
 import httpx
 import json
 import os
@@ -16,6 +20,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 DEFAULT_MODEL = "qwen3.5:9b"
 MAX_TOOL_ITERATIONS = 5
 SIMILARITY_THRESHOLD = 0.4
+OLLAMA_STREAM_TIMEOUT = httpx.Timeout(45.0, connect=10.0, read=45.0, write=45.0)
 
 # ─── Model capability cache ───────────────────────────────────────────────────
 # Populated on first use per model — Ollama's /api/show returns a "capabilities"
@@ -30,17 +35,35 @@ SIMILARITY_THRESHOLD = 0.4
 # onto the RAG fallback path regardless of what /api/show reports.
 
 _tools_capable_cache: dict[str, bool] = {}
+_thinking_capable_cache: dict[str, bool] = {}
 
-# Model name prefixes that self-report tools but have unreliable Ollama tool output.
-# Match by prefix so "mistral:7b", "mistral:latest", "mistral:v0.3" etc. all match.
-_TOOLS_UNRELIABLE_PREFIXES = ("mistral",)
+
+def build_notice_frame(message: str) -> str:
+    return f"\x1e__NOTICE__{json.dumps(message)}\x1e"
+
+
+def thinking_fallback_notice(model: str) -> str:
+    return f"Thinking mode is not supported reliably by {model}. Continuing with standard response mode."
+
+
+def _is_retryable_thinking_error(exc: Exception) -> bool:
+    if isinstance(exc, (httpx.ReadTimeout, httpx.RemoteProtocolError, httpx.ConnectError)):
+        return True
+    message = str(exc).lower()
+    return any(token in message for token in (
+        "think",
+        "thinking",
+        "unsupported",
+        "unknown field",
+        "invalid option",
+        "connection reset",
+    ))
 
 async def model_supports_tools(model: str) -> bool:
     if model in _tools_capable_cache:
         return _tools_capable_cache[model]
     # Check blocklist first — no need to hit the API for known-broken models
-    model_base = model.split(":")[0].lower()
-    if any(model_base.startswith(prefix) for prefix in _TOOLS_UNRELIABLE_PREFIXES):
+    if not model_supports_tools_by_prefix(model):
         _tools_capable_cache[model] = False
         return False
     try:
@@ -50,6 +73,15 @@ async def model_supports_tools(model: str) -> bool:
     except Exception:
         capable = False
     _tools_capable_cache[model] = capable
+    return capable
+
+
+async def model_supports_thinking(model: str) -> bool:
+    if model in _thinking_capable_cache:
+        return _thinking_capable_cache[model]
+
+    capable = ollama_model_supports_thinking(model)
+    _thinking_capable_cache[model] = capable
     return capable
 
 class ChatRequest(BaseModel):
@@ -513,7 +545,7 @@ async def execute_tool(name: str, args: dict, user_id: str) -> tuple[str, dict]:
 
 # ─── Ollama: non-streaming WITH tools (agentic decision loop) ─────────────────
 
-async def call_ollama_with_tools(messages: list[dict], model: str, thinking_enabled: bool) -> dict:
+async def _call_ollama_with_tools_once(messages: list[dict], model: str, thinking_enabled: bool) -> dict:
     async with httpx.AsyncClient(timeout=60) as client:
         res = await client.post(f"{OLLAMA_URL}/api/chat", json={
             "model": model,
@@ -522,18 +554,31 @@ async def call_ollama_with_tools(messages: list[dict], model: str, thinking_enab
             "stream": False,
             "think": thinking_enabled
         })
+        res.raise_for_status()
         return res.json()["message"]
+
+
+async def call_ollama_with_tools(messages: list[dict], model: str, thinking_enabled: bool) -> tuple[dict, bool, str | None]:
+    try:
+        message = await _call_ollama_with_tools_once(messages, model, thinking_enabled)
+        return message, thinking_enabled, None
+    except Exception as exc:
+        if thinking_enabled and _is_retryable_thinking_error(exc):
+            message = await _call_ollama_with_tools_once(messages, model, False)
+            return message, False, thinking_fallback_notice(model)
+        raise
 
 # ─── Ollama: streaming WITHOUT tools (final answer only) ──────────────────────
 
-async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool):
-    async with httpx.AsyncClient(timeout=120) as client:
+async def _stream_ollama_once(messages: list[dict], model: str, thinking_enabled: bool):
+    async with httpx.AsyncClient(timeout=OLLAMA_STREAM_TIMEOUT) as client:
         async with client.stream("POST", f"{OLLAMA_URL}/api/chat", json={
             "model": model,
             "messages": messages,
             "stream": True,
             "think": thinking_enabled
         }) as res:
+            res.raise_for_status()
             async for line in res.aiter_lines():
                 if line:
                     data = json.loads(line)
@@ -562,6 +607,21 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
                         }
                         yield f"\x1e__METRICS__{json.dumps(metrics)}\x1e"
                         break
+
+
+async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool):
+    emitted_anything = False
+    try:
+        async for chunk in _stream_ollama_once(messages, model, thinking_enabled):
+            emitted_anything = True
+            yield chunk
+    except Exception as exc:
+        if thinking_enabled and not emitted_anything and _is_retryable_thinking_error(exc):
+            yield build_notice_frame(thinking_fallback_notice(model))
+            async for chunk in _stream_ollama_once(messages, model, False):
+                yield chunk
+            return
+        raise
 
 
 def build_query_extractor_messages(message: str, history: list[dict]) -> list[dict]:
@@ -632,6 +692,11 @@ async def chat(req: ChatRequest):
         async def response_stream():
             nonlocal all_sources, all_scores, total_result_count, tool_calls_summary
             thinking_buffer = ""
+            effective_thinking_enabled = req.thinkingEnabled
+
+            if effective_thinking_enabled and not await model_supports_thinking(req.modelName):
+                effective_thinking_enabled = False
+                yield build_notice_frame(thinking_fallback_notice(req.modelName))
 
             uses_tools = await model_supports_tools(req.modelName)
 
@@ -642,9 +707,12 @@ async def chat(req: ChatRequest):
                 messages.append({"role": "user", "content": req.message})
 
                 for _ in range(MAX_TOOL_ITERATIONS):
-                    response_msg = await call_ollama_with_tools(
-                        messages, req.modelName, req.thinkingEnabled
+                    response_msg, effective_thinking_enabled, notice = await call_ollama_with_tools(
+                        messages, req.modelName, effective_thinking_enabled
                     )
+
+                    if notice:
+                        yield build_notice_frame(notice)
 
                     # Thinking during the decision phase — yield immediately
                     if thinking := response_msg.get("thinking"):
@@ -708,10 +776,12 @@ async def chat(req: ChatRequest):
                 final_messages = build_rag_messages(req.message, relevant, req.history)
 
             # ── Both paths converge: stream the final answer ───────────────────
-            async for chunk in stream_ollama(final_messages, req.modelName, req.thinkingEnabled):
+            async for chunk in stream_ollama(final_messages, req.modelName, effective_thinking_enabled):
                 if chunk.startswith("\x1e__THINKING__"):
                     inner = chunk.strip("\x1e").replace("__THINKING__", "")
                     thinking_buffer += json.loads(inner)
+                    yield chunk
+                elif chunk.startswith("\x1e__NOTICE__"):
                     yield chunk
                 elif chunk.startswith("\x1e__METRICS__"):
                     metrics_data = json.loads(chunk.strip("\x1e").replace("__METRICS__", ""))
@@ -730,7 +800,7 @@ async def chat(req: ChatRequest):
                         tokens_per_second=metrics_data.get("tokens_per_second", 0),
                         threshold=SIMILARITY_THRESHOLD,
                         model_name=req.modelName,
-                        thinking_enabled=req.thinkingEnabled
+                        thinking_enabled=effective_thinking_enabled
                     ))
                     yield chunk
                 else:

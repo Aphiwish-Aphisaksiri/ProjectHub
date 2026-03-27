@@ -28,7 +28,7 @@ _METRICS = json.dumps({
 })
 
 
-async def _fake_stream_ok(messages):
+async def _fake_stream_ok(messages, model, thinking_enabled):
     """Minimal happy-path stream: two tokens then the metrics sentinel."""
     yield "Hello"
     yield " world"
@@ -158,7 +158,7 @@ def test_chat_filters_rows_below_similarity_threshold(client):
     }]
     captured_messages: list = []
 
-    async def capturing_stream(messages):
+    async def capturing_stream(messages, model, thinking_enabled):
         captured_messages.extend(messages)
         yield "ok"
         yield f"__METRICS__{_METRICS}"
@@ -184,7 +184,7 @@ def test_chat_passes_high_similarity_rows_to_prompt(client):
     }]
     captured_messages: list = []
 
-    async def capturing_stream(messages):
+    async def capturing_stream(messages, model, thinking_enabled):
         captured_messages.extend(messages)
         yield "ok"
         yield f"__METRICS__{_METRICS}"

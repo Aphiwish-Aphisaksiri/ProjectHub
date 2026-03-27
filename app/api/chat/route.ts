@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
     })
 
     return new Response(res.body, {
-        headers: { "Content-Type": "text/plain" },
+        status: res.status,
+        headers: {
+            "Content-Type": res.headers.get("Content-Type") ?? "text/plain",
+        },
     })
 }
