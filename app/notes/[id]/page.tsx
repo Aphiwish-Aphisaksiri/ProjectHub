@@ -37,29 +37,31 @@ export default async function NoteDetailPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-4">
                         <div className="max-w-4xl">
                             <Link href={back ?? "/notes"} className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4">
                                 <FiArrowLeft /> {back ? "Back to Project Notes" : "Back to Notes"}
                             </Link>
 
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-center gap-4">
                                 <span className="rounded-3xl border border-tertiary/30 bg-tertiary/20 p-3">
                                     <FiFileText className="text-tertiary" size={38} />
                                 </span>
                                 <div>
-                                    <h1 className="text-4xl 2xl:text-5xl font-black tracking-tighter text-offwhite">{note.title}</h1>
+                                    <h1 className="text-3xl 2xl:text-5xl font-black tracking-tighter text-offwhite">{note.title}</h1>
                                 </div>
                             </div>
                         </div>
 
-                        <Link
-                            href={`/notes/${note.id}/edit`}
-                            className="inline-flex items-center gap-3 self-end rounded-2xl bg-tertiary px-6 py-4 text-sm font-black text-offblack shadow-xl shadow-tertiary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            <FiEdit3 />
-                            Edit Note
-                        </Link>
+                        <div className="flex shrink-0">
+                            <Link
+                                href={`/notes/${note.id}/edit`}
+                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                                >
+                                <FiEdit3 className="group-hover:rotate-10 transition-transform" />
+                                Edit Note
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

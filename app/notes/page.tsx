@@ -21,7 +21,7 @@ export default async function NotesPage() {
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-50 contrast-150"></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-6 h-full flex items-end relative z-10 pt-6">
+                <div className="max-w-7xl mx-auto px-6 h-full flex items-end relative z-10 py-6">
                     <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
                         <div className="text-center md:text-left">
                             <h1 className="text-6xl font-black tracking-tighter text-offwhite flex items-center gap-4 justify-center md:justify-start">
