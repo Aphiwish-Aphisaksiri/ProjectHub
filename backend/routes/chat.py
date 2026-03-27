@@ -15,6 +15,41 @@ DEFAULT_MODEL = "qwen3.5:9b"
 MAX_TOOL_ITERATIONS = 5
 SIMILARITY_THRESHOLD = 0.4
 
+# ─── Model capability cache ───────────────────────────────────────────────────
+# Populated on first use per model — Ollama's /api/show returns a "capabilities"
+# list that includes "tools" only for models that genuinely support tool calling.
+# Caching avoids an extra HTTP round-trip on every chat request.
+#
+# BLOCKLIST: Some models declare "tools" capability in their Ollama modelfile but
+# use a non-standard chat template (e.g. Mistral v0.3 uses its own [TOOL_CALLS]
+# tokens). Ollama doesn't fully bridge this format, so tool call responses end up
+# in message.content as raw text instead of message.tool_calls — causing the loop
+# to exit with zero context and the model to hallucinate. These models are forced
+# onto the RAG fallback path regardless of what /api/show reports.
+
+_tools_capable_cache: dict[str, bool] = {}
+
+# Model name prefixes that self-report tools but have unreliable Ollama tool output.
+# Match by prefix so "mistral:7b", "mistral:latest", "mistral:v0.3" etc. all match.
+_TOOLS_UNRELIABLE_PREFIXES = ("mistral",)
+
+async def model_supports_tools(model: str) -> bool:
+    if model in _tools_capable_cache:
+        return _tools_capable_cache[model]
+    # Check blocklist first — no need to hit the API for known-broken models
+    model_base = model.split(":")[0].lower()
+    if any(model_base.startswith(prefix) for prefix in _TOOLS_UNRELIABLE_PREFIXES):
+        _tools_capable_cache[model] = False
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            res = await client.post(f"{OLLAMA_URL}/api/show", json={"name": model})
+            capable = "tools" in res.json().get("capabilities", [])
+    except Exception:
+        capable = False
+    _tools_capable_cache[model] = capable
+    return capable
+
 class ChatRequest(BaseModel):
     userId: str
     message: str
@@ -120,6 +155,49 @@ Formatting:
 - Use GFM tables for structured comparisons when appropriate
 - Do NOT wrap the entire response in a code block
 - Do NOT use markdown for short one-liner answers — plain text is fine"""
+
+# ─── RAG fallback prompt (for models without tool-calling capability) ───────────
+
+def build_rag_messages(message: str, context_rows: list[dict], history: list[dict]) -> list[dict]:
+    if context_rows:
+        parts: list[str] = []
+        seen: set = set()
+        for row in context_rows:
+            if row["projectId"] not in seen:
+                seen.add(row["projectId"])
+                parts.append(f"Project: {row['projectTitle']}")
+            parts.append(f"- ({row['sourceTable']}) {row['textContent']}")
+        context = "\n".join(parts)
+    else:
+        context = "No relevant projects found."
+
+    system_content = f"""You are a helpful assistant for a project management app called ProjectHub.
+You can only access the user's own projects.
+
+Rules:
+- Answer based ONLY on the context provided below
+- If the context doesn't contain enough information, say so honestly
+- If no relevant project was found, tell the user clearly
+- Reference project names directly in your answer
+- Never fabricate project data
+
+Formatting:
+- Responses are rendered with react-markdown (GitHub Flavored Markdown)
+- Use **bold** for project names, task names, and key terms
+- Use bullet lists (- item) when enumerating tasks, features, or notes
+- Use `inline code` for technical terms, slugs, or IDs
+- Use ## headings only when the response is long enough to need clear sections
+- Use GFM tables for structured comparisons when appropriate
+- Do NOT wrap the entire response in a code block
+- Do NOT use markdown for short one-liner answers — plain text is fine
+
+Context from user's projects:
+{context}"""
+
+    msgs = [{"role": "system", "content": system_content}]
+    msgs += history[-10:]
+    msgs.append({"role": "user", "content": message})
+    return msgs
 
 # ─── Vector search (tool executor) ───────────────────────────────────────────
 
@@ -365,11 +443,7 @@ async def stream_ollama(messages: list[dict], model: str, thinking_enabled: bool
 @router.post("/")
 async def chat(req: ChatRequest):
     try:
-        messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
-        messages += req.history[-10:]
-        messages.append({"role": "user", "content": req.message})
-
-        # Accumulated log data across all tool calls in this request
+        # Accumulated log data — populated by whichever path runs
         all_sources: list[str] = []
         all_scores: list[float] = []
         total_result_count = 0
@@ -379,52 +453,72 @@ async def chat(req: ChatRequest):
             nonlocal all_sources, all_scores, total_result_count, tool_calls_summary
             thinking_buffer = ""
 
-            # ── Agentic tool-calling loop ──────────────────────────────────────
-            for _ in range(MAX_TOOL_ITERATIONS):
-                response_msg = await call_ollama_with_tools(
-                    messages, req.modelName, req.thinkingEnabled
-                )
+            uses_tools = await model_supports_tools(req.modelName)
+            print(f"Model '{req.modelName}' tool-calling capability: {uses_tools}")
 
-                # Thinking during the tool-decision phase — yield immediately
-                if thinking := response_msg.get("thinking"):
-                    thinking_buffer += thinking
-                    yield f"\x1e__THINKING__{json.dumps(thinking)}\x1e"
+            if uses_tools:
+                # ── Agentic tool-calling loop (tool-capable models) ────────────
+                messages: list[dict] = [{"role": "system", "content": build_system_prompt()}]
+                messages += req.history[-10:]
+                messages.append({"role": "user", "content": req.message})
 
-                tool_calls = response_msg.get("tool_calls")
-                if not tool_calls:
-                    # LLM decided it has enough context — exit loop and stream answer
-                    break
+                for _ in range(MAX_TOOL_ITERATIONS):
+                    response_msg = await call_ollama_with_tools(
+                        messages, req.modelName, req.thinkingEnabled
+                    )
 
-                # Append the assistant message (with tool_calls) to history
-                messages.append(response_msg)
+                    # Thinking during the decision phase — yield immediately
+                    if thinking := response_msg.get("thinking"):
+                        thinking_buffer += thinking
+                        yield f"\x1e__THINKING__{json.dumps(thinking)}\x1e"
 
-                for call in tool_calls:
-                    fn = call.get("function", {})
-                    name = fn.get("name", "")
-                    args = fn.get("arguments", {})
-                    if isinstance(args, str):
-                        args = json.loads(args)
+                    tool_calls = response_msg.get("tool_calls")
+                    if not tool_calls:
+                        # LLM has enough context — exit loop and stream answer
+                        break
 
-                    # Emit __TOOLCALL__ BEFORE executing — the frontend shows
-                    # "Searching your projects..." the moment the LLM decides to search,
-                    # not after the result comes back.
-                    yield f"\x1e__TOOLCALL__{json.dumps({'name': name, 'args': args})}\x1e"
+                    messages.append(response_msg)
 
-                    result, log_info = await execute_tool(name, args, req.userId)
+                    for call in tool_calls:
+                        fn = call.get("function", {})
+                        name = fn.get("name", "")
+                        args = fn.get("arguments", {})
+                        if isinstance(args, str):
+                            args = json.loads(args)
 
-                    all_sources.extend(log_info.get("sources", []))
-                    all_scores.extend(log_info.get("scores", []))
-                    total_result_count += log_info.get("count", 0)
-                    tool_calls_summary.append(f"{name}({json.dumps(args)})")
+                        # Emit BEFORE executing — frontend shows indicator immediately
+                        yield f"\x1e__TOOLCALL__{json.dumps({'name': name, 'args': args})}\x1e"
 
-                    messages.append({
-                        "role": "tool",
-                        "name": name,
-                        "content": result
-                    })
+                        result, log_info = await execute_tool(name, args, req.userId)
 
-            # ── Final streaming answer (tools not attached — LLM just responds) ─
-            async for chunk in stream_ollama(messages, req.modelName, req.thinkingEnabled):
+                        all_sources.extend(log_info.get("sources", []))
+                        all_scores.extend(log_info.get("scores", []))
+                        total_result_count += log_info.get("count", 0)
+                        tool_calls_summary.append(f"{name}({json.dumps(args)})")
+
+                        messages.append({"role": "tool", "name": name, "content": result})
+
+                final_messages = messages
+
+            else:
+                # ── RAG fallback (models without tool-calling capability) ───────
+                # Emit the indicator immediately so the frontend shows "Searching..."
+                # while the embedding + vector search runs — same UX as tools path.
+                yield f"\x1e__TOOLCALL__{json.dumps({'name': 'search_project_data', 'args': {'query': req.message}})}\x1e"
+
+                query_embedding = await get_embedding(req.message)
+                context_rows = await search_user_projects(req.userId, query_embedding)
+                relevant = [r for r in context_rows if r["similarity"] >= SIMILARITY_THRESHOLD]
+
+                all_sources = list({r["sourceTable"] for r in relevant})
+                all_scores = [round(r["similarity"], 4) for r in relevant]
+                total_result_count = len(relevant)
+                tool_calls_summary = [f"rag_fallback(query={req.message[:60]})"]
+
+                final_messages = build_rag_messages(req.message, relevant, req.history)
+
+            # ── Both paths converge: stream the final answer ───────────────────
+            async for chunk in stream_ollama(final_messages, req.modelName, req.thinkingEnabled):
                 if chunk.startswith("\x1e__THINKING__"):
                     inner = chunk.strip("\x1e").replace("__THINKING__", "")
                     thinking_buffer += json.loads(inner)
