@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { FiPlus, FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder } from "react-icons/fi";
+import { FiPlus, FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder, FiEdit3 } from "react-icons/fi";
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
     HIGH:   { label: "High", color: "bg-red/10 text-red border-red/20" },
@@ -88,7 +88,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                         </div>
 
                         {/* Right: action buttons */}
-                        <div className="flex gap-3 shrink-0">
+                        <div className="flex flex-col gap-2 shrink-0">
+                            <Link
+                                href={`/projects/${slug}/edit`}
+                                className="group flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-lightgrey hover:text-offwhite font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
+                            >
+                                <FiEdit3 className="group-hover:rotate-10 transition-transform" size={15} /> Edit Project
+                            </Link>
                             <Link
                                 href={`/projects/${slug}/tasks/new`}
                                 className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"

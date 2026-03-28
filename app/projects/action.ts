@@ -58,3 +58,66 @@ async function embedProject(project: { id: string; title: string; description: s
         }),
     });
 }
+
+export async function updateProject({
+    projectId,
+    title,
+    description,
+    visibility,
+}: {
+    projectId: string;
+    title: string;
+    description: string;
+    visibility: "PRIVATE" | "PUBLIC";
+}) {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("You must be logged in to edit a project.");
+
+    const existing = await prisma.project.findFirst({
+        where: { id: projectId, ownerId: user.id },
+        select: { id: true, title: true, slug: true },
+    });
+    if (!existing) throw new Error("Project not found or access denied.");
+
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+
+    if (!trimmedTitle) throw new Error("A project title is required.");
+    if (trimmedDescription.length > 250) {
+        throw new Error("Description cannot exceed 250 characters.");
+    }
+
+    // Update slug when title changes
+    const newSlug = trimmedTitle !== existing.title
+        ? slugify(trimmedTitle)
+        : existing.slug;
+
+    const updated = await prisma.project.update({
+        where: { id: projectId },
+        data: {
+            title: trimmedTitle,
+            slug: newSlug,
+            description: trimmedDescription || null,
+            visibility,
+        },
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            slug: true,
+        },
+    });
+
+    embedProject(updated).catch((err) => {
+        console.error("Embedding failed for project update:", updated.id, err);
+    });
+
+    const { revalidatePath } = await import("next/cache");
+    revalidatePath("/projects");
+    revalidatePath(`/projects/${existing.slug}`);
+    if (newSlug !== existing.slug) {
+        revalidatePath(`/projects/${newSlug}`);
+    }
+
+    return updated;
+}
