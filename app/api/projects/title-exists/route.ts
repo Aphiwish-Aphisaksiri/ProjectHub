@@ -18,10 +18,13 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const excludeId = url.searchParams.get("excludeId");
+
     const project = await prisma.project.findFirst({
         where: {
             title,
             ownerId: user.id,
+            ...(excludeId ? { id: { not: excludeId } } : {}),
         },
     });
     return NextResponse.json({ exists: !!project });
