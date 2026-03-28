@@ -1,20 +1,25 @@
 """
-Unit tests for the pure helper functions in routes/chat.py
+Unit tests for the pure helper functions originally in routes/chat.py,
+now split across services/.
 
 All functions tested here are fully deterministic with no external dependencies.
 """
 
 import json
 import httpx
-from routes.chat import (
+from services.prompts import (
     build_rag_messages,
     build_system_prompt,
+    build_query_extractor_messages,
+)
+from services.ollama_client import (
     build_notice_frame,
     thinking_fallback_notice,
     _is_retryable_thinking_error,
+)
+from services.search import (
     _normalize_for_match,
     _project_match_score,
-    build_query_extractor_messages,
 )
 
 
