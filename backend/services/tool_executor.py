@@ -1,4 +1,6 @@
 import json
+import os
+import httpx
 from embeddings import get_embedding
 from services.search import (
     detect_project_scope,
@@ -6,6 +8,9 @@ from services.search import (
     SIMILARITY_THRESHOLD,
 )
 from services.structured_queries import run_structured_query
+
+NEXTJS_URL = os.getenv("NEXTJS_URL", "http://dev:3000")
+INTERNAL_API_SECRET = os.getenv("INTERNAL_API_SECRET", "")
 
 # ─── Tool schemas (sent to Ollama so the LLM can decide when to call them) ────
 
@@ -76,7 +81,157 @@ TOOLS = [
                 "required": ["intent"]
             }
         }
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_task",
+            "description": (
+                "Create a new task in one of the user's projects. "
+                "Use this when the user explicitly asks to create/add a task."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "project_name": {
+                        "type": "string",
+                        "description": "The exact project title to create the task in"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "The task title"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "Optional task description/body"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["TODO", "IN_PROGRESS", "DONE", "ARCHIVED"],
+                        "description": "Task status (default: TODO)"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["LOW", "MEDIUM", "HIGH"],
+                        "description": "Task priority (default: MEDIUM)"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "description": "Due date in ISO 8601 format (e.g. 2026-04-01)"
+                    }
+                },
+                "required": ["project_name", "title"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_task",
+            "description": (
+                "Update an existing task's status, priority, title, body, or due date. "
+                "Use this when the user asks to change/update/edit a task. "
+                "You MUST first call query_structured_data to find the task number before updating."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_number": {
+                        "type": "integer",
+                        "description": "The task number (e.g. #1, #5) to update"
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "The project title the task belongs to"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "New task title (omit to keep current)"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "New task body (omit to keep current)"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": ["TODO", "IN_PROGRESS", "DONE", "ARCHIVED"],
+                        "description": "New status"
+                    },
+                    "priority": {
+                        "type": "string",
+                        "enum": ["LOW", "MEDIUM", "HIGH"],
+                        "description": "New priority"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "description": "New due date in ISO 8601 format, or 'none' to clear"
+                    }
+                },
+                "required": ["task_number", "project_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_note",
+            "description": (
+                "Create a new note in one of the user's projects. "
+                "Use this when the user explicitly asks to create/add a note."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "project_name": {
+                        "type": "string",
+                        "description": "The exact project title to create the note in"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "The note title"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "The note content (supports markdown)"
+                    }
+                },
+                "required": ["project_name", "title", "body"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_project",
+            "description": (
+                "Update a project's description or visibility. "
+                "Use this when the user asks to change project details."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "project_name": {
+                        "type": "string",
+                        "description": "The current project title"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "New project title (omit to keep current)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "New project description"
+                    },
+                    "visibility": {
+                        "type": "string",
+                        "enum": ["PRIVATE", "PUBLIC"],
+                        "description": "New visibility setting"
+                    }
+                },
+                "required": ["project_name"]
+            }
+        }
+    },
 ]
 
 # ─── Tool dispatcher ──────────────────────────────────────────────────────────
@@ -122,4 +277,202 @@ async def execute_tool(name: str, args: dict, user_id: str) -> tuple[str, dict]:
         )
         return result, {"sources": ["structured_query"], "scores": [], "count": 0}
 
+    elif name == "create_task":
+        return await _execute_create_task(args, user_id)
+
+    elif name == "update_task":
+        return await _execute_update_task(args, user_id)
+
+    elif name == "create_note":
+        return await _execute_create_note(args, user_id)
+
+    elif name == "update_project":
+        return await _execute_update_project(args, user_id)
+
     return f"Unknown tool: {name}", {}
+
+
+# ─── Write tool helpers ───────────────────────────────────────────────────────
+
+async def _resolve_project_slug(user_id: str, project_name: str) -> tuple[str | None, str | None]:
+    """Look up the project slug by fuzzy-matching the project name."""
+    from db import get_pool
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            'SELECT slug, title FROM "Project" WHERE "ownerId" = $1 AND LOWER(title) = LOWER($2)',
+            user_id, project_name,
+        )
+        if row:
+            return row["slug"], row["title"]
+        # Fallback: partial match
+        row = await conn.fetchrow(
+            'SELECT slug, title FROM "Project" WHERE "ownerId" = $1 AND LOWER(title) LIKE LOWER($2) LIMIT 1',
+            user_id, f"%{project_name}%",
+        )
+        return (row["slug"], row["title"]) if row else (None, None)
+
+
+async def _resolve_task_id(user_id: str, task_number: int, project_name: str) -> dict | None:
+    """Look up a task by its number + project name, returning its current data."""
+    from db import get_pool
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("""
+            SELECT t.id, t.title, t.body, t.status, t.priority, t."dueDate", p.slug as "projectSlug"
+            FROM "Task" t
+            JOIN "Project" p ON p.id = t."projectId"
+            WHERE t."taskNumber" = $1 AND p."ownerId" = $2 AND LOWER(p.title) LIKE LOWER($3)
+        """, task_number, user_id, f"%{project_name}%")
+        if row:
+            return dict(row)
+    return None
+
+
+def _internal_headers() -> dict:
+    return {
+        "Content-Type": "application/json",
+        "x-internal-secret": INTERNAL_API_SECRET,
+    }
+
+
+async def _execute_create_task(args: dict, user_id: str) -> tuple[str, dict]:
+    project_name = args.get("project_name", "")
+    slug, resolved_title = await _resolve_project_slug(user_id, project_name)
+    if not slug:
+        return f"Project '{project_name}' not found.", {}
+
+    payload = {
+        "userId": user_id,
+        "projectSlug": slug,
+        "title": args.get("title", ""),
+        "body": args.get("body"),
+        "status": args.get("status", "TODO"),
+        "priority": args.get("priority", "MEDIUM"),
+        "dueDate": args.get("due_date"),
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        res = await client.post(f"{NEXTJS_URL}/api/tasks", json=payload, headers=_internal_headers())
+
+    if res.status_code >= 400:
+        error = res.json().get("error", res.text)
+        return f"Failed to create task: {error}", {}
+
+    data = res.json()
+    return (
+        f"Task created successfully in **{resolved_title}**: \"{data.get('title', args.get('title'))}\"",
+        {"sources": ["write_task"], "scores": [], "count": 1},
+    )
+
+
+async def _execute_update_task(args: dict, user_id: str) -> tuple[str, dict]:
+    task_number = args.get("task_number")
+    project_name = args.get("project_name", "")
+    if not task_number:
+        return "Task number is required to update a task.", {}
+
+    task = await _resolve_task_id(user_id, int(task_number), project_name)
+    if not task:
+        return f"Task #{task_number} not found in project '{project_name}'.", {}
+
+    payload = {
+        "userId": user_id,
+        "taskId": task["id"],
+        "title": args.get("title", task["title"]),
+        "body": args.get("body", task["body"] or ""),
+        "status": args.get("status", task["status"]),
+        "priority": args.get("priority", task["priority"]),
+        "dueDate": (
+            None if args.get("due_date") == "none"
+            else args.get("due_date") or (task["dueDate"].isoformat() if task["dueDate"] else None)
+        ),
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        res = await client.patch(f"{NEXTJS_URL}/api/tasks", json=payload, headers=_internal_headers())
+
+    if res.status_code >= 400:
+        error = res.json().get("error", res.text)
+        return f"Failed to update task: {error}", {}
+
+    changes = []
+    if args.get("title"): changes.append(f"title → \"{args['title']}\"")
+    if args.get("status"): changes.append(f"status → {args['status']}")
+    if args.get("priority"): changes.append(f"priority → {args['priority']}")
+    if args.get("due_date"): changes.append(f"due date → {args['due_date']}")
+    if args.get("body"): changes.append("body updated")
+    change_str = ", ".join(changes) if changes else "no fields changed"
+
+    return (
+        f"Task #{task_number} updated: {change_str}",
+        {"sources": ["write_task"], "scores": [], "count": 1},
+    )
+
+
+async def _execute_create_note(args: dict, user_id: str) -> tuple[str, dict]:
+    project_name = args.get("project_name", "")
+    slug, resolved_title = await _resolve_project_slug(user_id, project_name)
+    if not slug:
+        return f"Project '{project_name}' not found.", {}
+
+    payload = {
+        "userId": user_id,
+        "projectSlug": slug,
+        "title": args.get("title", ""),
+        "body": args.get("body", ""),
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        res = await client.post(f"{NEXTJS_URL}/api/notes", json=payload, headers=_internal_headers())
+
+    if res.status_code >= 400:
+        error = res.json().get("error", res.text)
+        return f"Failed to create note: {error}", {}
+
+    data = res.json()
+    return (
+        f"Note created successfully in **{resolved_title}**: \"{data.get('title', args.get('title'))}\"",
+        {"sources": ["write_note"], "scores": [], "count": 1},
+    )
+
+
+async def _execute_update_project(args: dict, user_id: str) -> tuple[str, dict]:
+    project_name = args.get("project_name", "")
+
+    # Look up the project to get its id
+    from db import get_pool
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            'SELECT id, title, description, visibility FROM "Project" WHERE "ownerId" = $1 AND LOWER(title) LIKE LOWER($2)',
+            user_id, f"%{project_name}%",
+        )
+    if not row:
+        return f"Project '{project_name}' not found.", {}
+
+    payload = {
+        "userId": user_id,
+        "projectId": row["id"],
+        "title": args.get("title", row["title"]),
+        "description": args.get("description", row["description"] or ""),
+        "visibility": args.get("visibility", row["visibility"]),
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        res = await client.patch(f"{NEXTJS_URL}/api/projects", json=payload, headers=_internal_headers())
+
+    if res.status_code >= 400:
+        error = res.json().get("error", res.text)
+        return f"Failed to update project: {error}", {}
+
+    changes = []
+    if args.get("title"): changes.append(f"title → \"{args['title']}\"")
+    if args.get("description"): changes.append("description updated")
+    if args.get("visibility"): changes.append(f"visibility → {args['visibility']}")
+    change_str = ", ".join(changes) if changes else "no fields changed"
+
+    return (
+        f"Project **{row['title']}** updated: {change_str}",
+        {"sources": ["write_project"], "scores": [], "count": 1},
+    )

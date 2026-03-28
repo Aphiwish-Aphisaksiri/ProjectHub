@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { TaskStatus, Task } from "@/types";
+import { updateTaskStatusForUser } from "@/lib/services/tasks";
 
 export async function getProjectTasks(slug: string): Promise<Task[]> {
     const user = await getCurrentUser();
@@ -39,42 +40,7 @@ export async function updateTaskStatus(taskId: string, newStatus: TaskStatus) {
     const user = await getCurrentUser();
     if (!user) throw new Error("Not authenticated.");
 
-    // Verify ownership before updating
-    const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: { project: { select: { ownerId: true, id: true } } },
-    });
-
-    if (!task) throw new Error("Task not found.");
-    if (task.project?.ownerId !== user.id) throw new Error("Access denied.");
-
-    const updated = await prisma.task.update({
-        where: { id: taskId },
-        data: { status: newStatus },
-    });
-
-    // Re-embed non-blocking to keep vector context fresh
-    reEmbedTask(updated, task.project.id).catch((err) => {
-        console.error("Re-embed failed for task:", taskId, err);
-    });
+    const updated = await updateTaskStatusForUser(user.id, taskId, newStatus);
 
     return updated;
-}
-
-async function reEmbedTask(
-    task: { id: string; title: string; body: string | null },
-    projectId: string,
-) {
-    const text = task.body ? `${task.title}\n${task.body}` : task.title;
-
-    await fetch(`${process.env.BACKEND_URL}/embed/task`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({
-            projectId,
-            sourceId: task.id,
-            text,
-        }),
-    });
 }
