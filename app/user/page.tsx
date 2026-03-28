@@ -103,12 +103,12 @@ export default function UserPage() {
                             </div>
                         </div>
                         <div className="flex gap-3 md:mb-2">
-                            <button className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all hover:scale-110 active:scale-90 shadow-xl shadow-black/20 group" title="Account Settings">
+                            <Link href="/user/security" className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all hover:scale-110 active:scale-90 shadow-xl shadow-black/20 group" title="Security & Access">
                                 <FiShield className="text-tertiary group-hover:animate-spin" />
-                            </button>
-                            <button className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all hover:scale-110 active:scale-90 shadow-xl shadow-black/20 group" title="Edit Profile">
+                            </Link>
+                            <Link href="/user/edit" className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all hover:scale-110 active:scale-90 shadow-xl shadow-black/20 group" title="Edit Profile">
                                 <FiEdit3 className="text-secondary-400" />
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -179,14 +179,14 @@ export default function UserPage() {
                             <h3 className="text-xl font-extrabold text-offwhite mb-8 tracking-tight">System Controls</h3>
                             <div className="space-y-3">
                                 {[
-                                    { label: 'Edit Profile', icon: FiEdit3, color: 'text-tertiary' },
-                                    { label: 'Security & Access', icon: FiShield, color: 'text-secondary-400' },
-                                    { label: 'Preferences', icon: FiUser, color: 'text-lightgrey' }
+                                    { label: 'Edit Profile', icon: FiEdit3, color: 'text-tertiary', href: '/user/edit' },
+                                    { label: 'Security & Access', icon: FiShield, color: 'text-secondary-400', href: '/user/security' },
+                                    { label: 'Preferences', icon: FiUser, color: 'text-lightgrey', href: '/settings' }
                                 ].map((item, i) => (
-                                    <button key={i} className="w-full flex items-center gap-4 px-5 py-4 text-lightgrey hover:text-offwhite bg-white/5 hover:bg-white/10 rounded-2xl transition-all font-bold border border-transparent hover:border-white/10 text-left">
+                                    <Link key={i} href={item.href} className="w-full flex items-center gap-4 px-5 py-4 text-lightgrey hover:text-offwhite bg-white/5 hover:bg-white/10 rounded-2xl transition-all font-bold border border-transparent hover:border-white/10 text-left">
                                         <item.icon className={item.color} size={20} />
                                         {item.label}
-                                    </button>
+                                    </Link>
                                 ))}
                                 <div className="pt-6 mt-6 border-t border-white/5">
                                     <button
