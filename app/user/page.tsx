@@ -67,7 +67,7 @@ export default function UserPage() {
     const initials = profile.name ? profile.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
 
     return (
-        <div className="bg-primary text-offwhite pb-20 selection:bg-tertiary/30 overflow-x-hidden">
+        <div className="bg-primary text-offwhite pb-20 selection:bg-tertiary/30 overflow-x-hidden h-full">
             {/* Header / Hero Section */}
             <div className="relative min-h-48 bg-linear-to-br from-primary-800 via-secondary-900 to-primary-950 overflow-hidden border-b border-white/5 pt-4">
                 {/* Decorative Elements */}
@@ -156,7 +156,7 @@ export default function UserPage() {
                                             <FiExternalLink className="text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </Link>
                                         <Link href="/tasks" className="group flex items-center justify-between p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/15 transition-all">
-                                            <span className="font-bold text-offwhite group-hover:translate-x-1 transition-transform">Command Center</span>
+                                            <span className="font-bold text-offwhite group-hover:translate-x-1 transition-transform">Tasks summary</span>
                                             <FiExternalLink className="text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </Link>
                                     </div>
