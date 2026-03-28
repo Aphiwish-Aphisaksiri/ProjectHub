@@ -382,7 +382,7 @@ export default function ChatBox({ userId }: { userId: string }) {
 
             {/* Input bar */}
             <div className="w-full max-w-3xl mx-auto mt-0 mb-4">
-                <div className="flex flex-col bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-3xl gap-1 p-2 shadow-2xl shadow-black/30">
+                <div className="flex flex-col bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-3xl p-2 shadow-2xl shadow-black/30">
                     {/* Textarea */}
                     <textarea
                         value={input}
@@ -399,23 +399,41 @@ export default function ChatBox({ userId }: { userId: string }) {
                         }}
                         placeholder={messages.length === 0 ? "Ask about your projects..." : "Reply..."}
                         rows={1}
-                        className="chatInputTextarea flex-1 rounded-2xl px-4 py-3 bg-transparent text-offwhite placeholder:text-lightgrey/50 focus:outline-none text-sm font-medium resize-none overflow-y-auto leading-relaxed"
+                        className="chatInputTextarea flex rounded-2xl px-4 pt-3 pb-2 mx-2 mt-2 bg-transparent text-offwhite placeholder:text-lightgrey/50 focus:outline-none text-sm font-medium resize-none overflow-y-auto leading-relaxed"
                         style={{ maxHeight: "320px" }}
                         disabled={loading}
                     />
 
                     {/* Right column: model selector, thinking toggle, send button */}
                     <div className="flex flex-row items-center justify-end gap-1.5 shrink-0">
+                        {/* Thinking toggle */}
+                        <button
+                            onClick={() => {
+                                if (selectedModelMeta?.thinkingSupported === false) return
+                                setThinkingEnabled(prev => !prev)
+                            }}
+                            disabled={loading || selectedModelMeta?.thinkingSupported === false}
+                            title={selectedModelMeta?.thinkingSupported === false ? "This model does not support thinking mode reliably." : undefined}
+                            className={`flex items-center gap-1.5 text-xs px-2 py-2 rounded-xl transition-all disabled:opacity-50 ${
+                                thinkingEnabled
+                                    ? "bg-green/20 text-offwhite/50 hover:bg-green/10"
+                                    : "border-white/10 text-lightgrey hover:bg-offwhite/10"
+                            }`}
+                        >
+                            <span className="text-[12px]">✦</span>
+                            Thinking {selectedModelMeta?.thinkingSupported === false ? "unsupported" : thinkingEnabled ? "on" : "off"}
+                        </button>
+
                         {/* Model selector */}
                         <select
                             value={selectedModel}
                             onChange={e => setSelectedModel(e.target.value)}
                             disabled={loading}
-                            className="bg-white/5 border border-white/10 text-lightgrey text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-tertiary/40 transition-colors disabled:opacity-50"
+                            className="text-lightgrey text-xs rounded-xl px-2 py-2 focus:outline-none focus:border-tertiary/40 transition-colors disabled:opacity-50 max-w-36 hover:bg-offwhite/10"
                         >
                             {models.length > 0 ? (
                                 models.map(m => (
-                                    <option key={m.name} value={m.name} className="bg-primary text-offwhite">
+                                    <option key={m.name} value={m.name} className="bg-secondary/80 text-offwhite">
                                         {m.name} ({m.sizeGb}GB)
                                     </option>
                                 ))
@@ -425,24 +443,6 @@ export default function ChatBox({ userId }: { userId: string }) {
                                 </option>
                             )}
                         </select>
-
-                        {/* Thinking toggle */}
-                        <button
-                            onClick={() => {
-                                if (selectedModelMeta?.thinkingSupported === false) return
-                                setThinkingEnabled(prev => !prev)
-                            }}
-                            disabled={loading || selectedModelMeta?.thinkingSupported === false}
-                            title={selectedModelMeta?.thinkingSupported === false ? "This model does not support thinking mode reliably." : undefined}
-                            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50 ${
-                                thinkingEnabled
-                                    ? "bg-tertiary/20 border-tertiary/40 text-tertiary"
-                                    : "bg-white/5 border-white/10 text-lightgrey hover:border-white/20"
-                            }`}
-                        >
-                            <span className="text-[10px]">✦</span>
-                            Thinking {selectedModelMeta?.thinkingSupported === false ? "unsupported" : thinkingEnabled ? "on" : "off"}
-                        </button>
 
                         {/* Send button */}
                         <button
