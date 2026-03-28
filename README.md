@@ -76,6 +76,7 @@ Create a `.env` file in your project root with the following variables:
     POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
     POSTGRES_DB=<POSTGRES_DB>
     BACKEND_URL=http://backend:8000
+    INTERNAL_API_SECRET=<your-secret>
 
 Create a `.env.local` file in your project root with the following variables:
 
@@ -86,10 +87,15 @@ Create a `.env.local` file in your project root with the following variables:
     POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
     POSTGRES_DB=<POSTGRES_DB>
     BACKEND_URL=http://localhost:8000
+    INTERNAL_API_SECRET=<your-secret>
 
-- **NEXTAUTH_SECRET:** Generate a secure secret with:
+- **NEXTAUTH_SECRET and INTERNAL_API_SECRET:** Generate a secure secret with:
 
     openssl rand -hex 32
+
+or
+
+    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Or use any random 32-character string.
 
