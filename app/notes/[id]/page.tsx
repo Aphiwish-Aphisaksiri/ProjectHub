@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { FiArrowLeft, FiClock, FiEdit3, FiFileText, FiFolder, FiUser } from 'react-icons/fi';
-import NoteContent from '@/app/notes/components/NoteContent';
+import ContentBox from '@/components/ContentBox';
 import { getCurrentUser } from '@/lib/auth';
 import { getUserNoteById } from '@/lib/notes';
 
@@ -79,7 +79,7 @@ export default async function NoteDetailPage({
                             </div>
                         </div>
 
-                        <NoteContent body={note.body} />
+                        <ContentBox body={note.body} />
                     </section>
 
                     <aside className="space-y-6">
@@ -126,13 +126,6 @@ export default async function NoteDetailPage({
                                     </p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="rounded-[2.5rem] border border-tertiary/10 bg-linear-to-br from-tertiary/20 to-primary-950 p-8 shadow-lg">
-                            <h3 className="text-2xl font-black tracking-tight text-offwhite">Keep editing lightweight</h3>
-                            <p className="mt-3 text-sm font-medium leading-7 text-lightgrey">
-                                This route currently preserves raw text exactly.
-                            </p>
                         </div>
                     </aside>
                 </div>

@@ -10,7 +10,7 @@ import {
     FiCircle,
     FiUser,
 } from "react-icons/fi";
-import NoteContent from "@/app/notes/components/NoteContent";
+import ContentBox from "@/components/ContentBox";
 import { getCurrentUser } from "@/lib/auth";
 import { getTaskById } from "@/lib/tasks";
 import { TaskStatus, Priority } from "@/types";
@@ -185,7 +185,7 @@ export default async function TaskDetailPage({
                         </div>
 
                         {task.body ? (
-                            <NoteContent body={task.body} />
+                            <ContentBox body={task.body} />
                         ) : (
                             <div className="rounded-4xl border border-dashed border-white/10 p-10 text-center">
                                 <p className="text-lg font-bold text-lightgrey/40">No description yet</p>
