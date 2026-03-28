@@ -174,6 +174,56 @@ on **WSL2 Ubuntu terminal**, run:
 
 You should see your GPU listed.
 
+---
+
+## Running Tests Locally
+
+### Frontend — Vitest
+
+Make sure Node.js dependencies are installed, then run:
+
+    npm install
+    npm test
+
+To run in watch mode (re-runs on file save):
+
+    npm run test:watch
+
+To run a specific file or folder:
+
+    npx vitest run app/api/notes/route.test.ts
+    npx vitest run app/api
+
+---
+
+### Backend — Pytest
+
+#### 1. Create and activate a virtual environment
+
+    cd backend
+    python -m venv .venv
+
+Activate it:
+
+- **Windows:** `.venv\Scripts\activate`
+- **macOS/Linux:** `source .venv/bin/activate`
+
+> **Conda users:** skip the above — just activate your Conda environment instead.
+
+#### 2. Install dependencies
+
+    pip install -r requirements.txt
+
+#### 3. Run the tests
+
+    python -m pytest
+
+To run a specific file:
+
+    python -m pytest tests/test_tool_executor.py -v
+
+---
+
 ## Database Migrations
 
 To apply database migrations, run the following command:
