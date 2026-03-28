@@ -12,6 +12,12 @@ npm-debug.log
 dist
 coverage
 .vscode
+
+# Vitest
+vitest.config.ts
+vitest.setup.ts
+**/*.test.ts
+**/*.spec.ts
 *.tsbuildinfo
 
 # REST Client test files
