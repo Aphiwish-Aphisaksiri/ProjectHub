@@ -382,7 +382,7 @@ export default function ChatBox({ userId }: { userId: string }) {
 
             {/* Input bar */}
             <div className="w-full max-w-3xl mx-auto mt-0 mb-4">
-                <div className="flex flex-col bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-3xl p-2 shadow-2xl shadow-black/30">
+                <div className="flex flex-col bg-secondary/40 backdrop-blur-xl border border-white/10 rounded-3xl p-2 shadow-2xl shadow-black/30">
                     {/* Textarea */}
                     <textarea
                         value={input}
