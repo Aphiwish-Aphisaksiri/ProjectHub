@@ -202,6 +202,39 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "update_note",
+            "description": (
+                "Update an existing note's title or body. "
+                "Use this when the user asks to change/edit a note. "
+                "You MUST first call query_structured_data with get_notes_for_project to find the note title before updating."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "note_title": {
+                        "type": "string",
+                        "description": "The current title of the note to update"
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "The project title the note belongs to"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "New note title (omit to keep current)"
+                    },
+                    "body": {
+                        "type": "string",
+                        "description": "New note body/content (supports markdown)"
+                    }
+                },
+                "required": ["note_title", "project_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "update_project",
             "description": (
                 "Update a project's description or visibility. "
@@ -285,6 +318,9 @@ async def execute_tool(name: str, args: dict, user_id: str) -> tuple[str, dict]:
 
     elif name == "create_note":
         return await _execute_create_note(args, user_id)
+
+    elif name == "update_note":
+        return await _execute_update_note(args, user_id)
 
     elif name == "update_project":
         return await _execute_update_project(args, user_id)
@@ -410,6 +446,30 @@ async def _execute_update_task(args: dict, user_id: str) -> tuple[str, dict]:
     )
 
 
+async def _resolve_note_id(user_id: str, note_title: str, project_name: str) -> dict | None:
+    """Look up a note by its title + project name, returning its current data."""
+    from db import get_pool
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("""
+            SELECT n.id, n.title, n.body, p.slug as "projectSlug"
+            FROM "Note" n
+            JOIN "Project" p ON p.id = n."projectId"
+            WHERE LOWER(n.title) = LOWER($1) AND p."ownerId" = $2 AND LOWER(p.title) LIKE LOWER($3)
+        """, note_title, user_id, f"%{project_name}%")
+        if row:
+            return dict(row)
+        # Fallback: partial title match
+        row = await conn.fetchrow("""
+            SELECT n.id, n.title, n.body, p.slug as "projectSlug"
+            FROM "Note" n
+            JOIN "Project" p ON p.id = n."projectId"
+            WHERE LOWER(n.title) LIKE LOWER($1) AND p."ownerId" = $2 AND LOWER(p.title) LIKE LOWER($3)
+            LIMIT 1
+        """, f"%{note_title}%", user_id, f"%{project_name}%")
+        return dict(row) if row else None
+
+
 async def _execute_create_note(args: dict, user_id: str) -> tuple[str, dict]:
     project_name = args.get("project_name", "")
     slug, resolved_title = await _resolve_project_slug(user_id, project_name)
@@ -433,6 +493,44 @@ async def _execute_create_note(args: dict, user_id: str) -> tuple[str, dict]:
     data = res.json()
     return (
         f"Note created successfully in **{resolved_title}**: \"{data.get('title', args.get('title'))}\"",
+        {"sources": ["write_note"], "scores": [], "count": 1},
+    )
+
+
+async def _execute_update_note(args: dict, user_id: str) -> tuple[str, dict]:
+    note_title = args.get("note_title", "")
+    project_name = args.get("project_name", "")
+    if not note_title:
+        return "Note title is required to update a note.", {}
+
+    note = await _resolve_note_id(user_id, note_title, project_name)
+    if not note:
+        return f"Note '{note_title}' not found in project '{project_name}'.", {}
+
+    new_title = args.get("title", note["title"])
+    new_body = args.get("body", note["body"])
+
+    payload = {
+        "userId": user_id,
+        "noteId": note["id"],
+        "title": new_title,
+        "body": new_body,
+    }
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        res = await client.patch(f"{NEXTJS_URL}/api/notes", json=payload, headers=_internal_headers())
+
+    if res.status_code >= 400:
+        error = res.json().get("error", res.text)
+        return f"Failed to update note: {error}", {}
+
+    changes = []
+    if args.get("title"): changes.append(f'title → "{args["title"]}"')
+    if args.get("body"): changes.append("body updated")
+    change_str = ", ".join(changes) if changes else "no fields changed"
+
+    return (
+        f"Note \"{note['title']}\" updated: {change_str}",
         {"sources": ["write_note"], "scores": [], "count": 1},
     )
 

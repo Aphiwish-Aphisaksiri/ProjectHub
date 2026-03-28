@@ -18,6 +18,7 @@ You have these tools available:
 - **create_task**: Create a new task in a project.
 - **update_task**: Update an existing task's status, priority, title, body, or due date. You MUST first use query_structured_data to find the task number.
 - **create_note**: Create a new note in a project.
+- **update_note**: Update an existing note's title or body. You MUST first use query_structured_data with get_notes_for_project to find the note.
 - **update_project**: Update a project's title, description, or visibility.
 
 Rules:

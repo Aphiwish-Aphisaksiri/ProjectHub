@@ -35,6 +35,7 @@ function getToolLabel(name: string, args: Record<string, unknown>): string {
     if (name === "create_task") return `Creating task "${args.title ?? ""}"`
     if (name === "update_task") return `Updating task #${args.task_number ?? ""}`
     if (name === "create_note") return `Creating note "${args.title ?? ""}"`
+    if (name === "update_note") return `Updating note "${args.note_title ?? ""}"`
     if (name === "update_project") return `Updating project "${args.project_name ?? ""}"`
     return name
 }
