@@ -1,7 +1,7 @@
 "use client";
 
 import { GoGear } from "react-icons/go";
-import { FiPlus, FiChevronLeft, FiChevronRight, FiMenu, FiX } from "react-icons/fi";
+import { FiPlus, FiChevronLeft, FiChevronRight, FiChevronDown, FiMenu, FiX } from "react-icons/fi";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
 import { Project } from "@/types";
@@ -12,9 +12,9 @@ import { getCurrentUserName } from "@/components/action";
 export interface AppSidebarProps {
     /**
      * Builds the href for each project entry in the list.
-     * - Projects sidebar: (slug) => `/projects/${slug}`
-     * - Notes sidebar:    (slug) => `/projects/${slug}/notes`
-     * - Tasks sidebar:    (slug) => `/projects/${slug}/tasks`
+     * @deprecated Each project now exposes Overview / Tasks / Notes sub-links via an
+     *             accordion, so this builder is no longer used for project list items.
+     *             Kept for backward compatibility with existing callers.
      */
     projectLinkBuilder: (slug: string) => string;
 
@@ -26,6 +26,27 @@ export interface AppSidebarProps {
      * Omit prop entirely to hide the button.
      */
     newItemLink?: { href: string; label: string };
+}
+
+/** Sub-pages shown under each project in the accordion. */
+const PROJECT_SUB_PAGES = [
+    { key: "overview" as const, label: "Overview" },
+    { key: "tasks"    as const, label: "Tasks"    },
+    { key: "notes"    as const, label: "Notes"    },
+] as const;
+
+/**
+ * Parse a JSON array stored in localStorage, returning an empty array on any
+ * error so callers don't need scattered try/catch blocks.
+ */
+function parseStoredArray(key: string): string[] {
+    try {
+        const raw = localStorage.getItem(key);
+        const parsed = JSON.parse(raw ?? "[]");
+        return Array.isArray(parsed) ? (parsed as string[]) : [];
+    } catch {
+        return [];
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -41,9 +62,10 @@ function SidebarContent({
     initials,
     projectsList,
     pathname,
-    projectLinkBuilder,
     homeLink,
     newItemLink,
+    expanded,
+    toggleExpanded,
 }: {
     collapsed: boolean;
     setCollapsed: (fn: (c: boolean) => boolean) => void;
@@ -52,16 +74,18 @@ function SidebarContent({
     initials: string;
     projectsList: Project[];
     pathname: string;
-    projectLinkBuilder: (slug: string) => string;
     homeLink: { href: string; label: string; icon: ReactNode };
     newItemLink?: { href: string; label: string };
+    /** Set of project slugs whose accordion is currently open. */
+    expanded: Set<string>;
+    toggleExpanded: (slug: string) => void;
 }) {
     return (
         <>
-            {/* ── Top section ── */}
-            <div className="flex flex-col gap-1">
+            {/* ── Top section (flex-1 so the project list can scroll independently) ── */}
+            <div className="flex flex-col flex-1 min-h-0 gap-1">
                 {/* Workspace header */}
-                <div className={`flex items-center mb-3 min-w-0 ${collapsed ? "flex-col gap-2" : "gap-2.5 px-1"}`}>
+                <div className={`flex items-center mb-3 min-w-0 shrink-0 ${collapsed ? "flex-col gap-2" : "gap-2.5 px-1"}`}>
                     <div className="w-8 h-8 rounded-xl bg-tertiary/20 border border-tertiary/30 flex items-center justify-center text-tertiary text-xs font-black shrink-0">
                         {initials}
                     </div>
@@ -81,14 +105,14 @@ function SidebarContent({
                     </button>
                 </div>
 
-                <div className="border-t border-white/10 mb-2" />
+                <div className="border-t border-white/10 mb-2 shrink-0" />
 
                 {/* Home link — "All Projects" / "All Notes" / "All Tasks" */}
                 <Link
                     href={homeLink.href}
                     title={homeLink.label}
                     onClick={onNavigate}
-                    className={`flex items-center gap-2.5 py-2.5 rounded-xl text-sm font-bold transition-all ${collapsed ? "justify-center px-2" : "px-2"} ${
+                    className={`flex items-center gap-2.5 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0 ${collapsed ? "justify-center px-2" : "px-2"} ${
                         pathname === homeLink.href
                             ? "border-l-2 border-tertiary bg-tertiary/10 text-tertiary"
                             : "border-l-2 border-transparent text-offwhite hover:bg-white/5"
@@ -98,41 +122,104 @@ function SidebarContent({
                     {!collapsed && <span>{homeLink.label}</span>}
                 </Link>
 
-                <div className="border-t border-white/10 my-2" />
+                <div className="border-t border-white/10 my-2 shrink-0" />
 
                 {!collapsed && (
-                    <p className="text-xs text-lightgrey/40 font-bold uppercase tracking-widest px-2 mb-1">Projects</p>
+                    <p className="text-xs text-lightgrey/40 font-bold uppercase tracking-widest px-2 mb-1 shrink-0">Projects</p>
                 )}
 
-                {/* Project list — each link destination is controlled by projectLinkBuilder */}
-                <div className="flex flex-col gap-0.5">
+                {/* Project list — accordion, scrolls independently when list overflows */}
+                <div className="flex flex-col gap-0.5 overflow-y-auto flex-1 min-h-0">
                     {projectsList.map((project) => {
-                        const targetLink = projectLinkBuilder(project.slug);
-                        // isActive must use the exact built link so that notes/tasks
-                        // active state doesn't bleed across routes.
-                        const isActive = pathname === targetLink || pathname.startsWith(targetLink + "/");
+                        const overviewHref = `/projects/${project.slug}`;
+                        const tasksHref = `/projects/${project.slug}/tasks`;
+                        const notesHref = `/projects/${project.slug}/notes`;
+                        const isProjectActive =
+                            pathname === overviewHref ||
+                            pathname.startsWith(`/projects/${project.slug}/`);
+                        const isExpanded = expanded.has(project.slug);
+
+                        if (collapsed) {
+                            // Collapsed mode — show only the dot icon; navigate to overview
+                            return (
+                                <Link
+                                    key={project.slug}
+                                    href={overviewHref}
+                                    title={project.title}
+                                    onClick={onNavigate}
+                                    className={`flex items-center justify-center px-2 py-2 rounded-xl text-sm transition-all ${
+                                        isProjectActive
+                                            ? "border-l-2 border-tertiary bg-tertiary/10 text-tertiary font-black"
+                                            : "border-l-2 border-transparent text-lightgrey hover:bg-white/5 hover:text-offwhite"
+                                    }`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isProjectActive ? "bg-tertiary" : "bg-tertiary/30"}`} />
+                                </Link>
+                            );
+                        }
+
                         return (
-                            <Link
-                                key={project.slug}
-                                href={targetLink}
-                                title={project.title}
-                                onClick={onNavigate}
-                                className={`flex items-center gap-2.5 py-2 rounded-xl text-sm transition-all ${collapsed ? "justify-center px-2" : "px-2"} ${
-                                    isActive
-                                        ? "border-l-2 border-tertiary bg-tertiary/10 text-tertiary font-black"
-                                        : "border-l-2 border-transparent text-lightgrey hover:bg-white/5 hover:text-offwhite"
-                                }`}
-                            >
-                                <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isActive ? "bg-tertiary" : "bg-tertiary/30"}`} />
-                                {!collapsed && <span className="truncate">{project.title}</span>}
-                            </Link>
+                            <div key={project.slug}>
+                                {/* Accordion toggle button */}
+                                <button
+                                    onClick={() => toggleExpanded(project.slug)}
+                                    title={project.title}
+                                    className={`w-full flex items-center gap-2.5 py-2 px-2 rounded-xl text-sm transition-all ${
+                                        isProjectActive
+                                            ? "border-l-2 border-tertiary bg-tertiary/10 text-tertiary font-black"
+                                            : "border-l-2 border-transparent text-lightgrey hover:bg-white/5 hover:text-offwhite"
+                                    }`}
+                                >
+                                    <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${isProjectActive ? "bg-tertiary" : "bg-tertiary/30"}`} />
+                                    <span className="truncate flex-1 text-left">{project.title}</span>
+                                    <FiChevronDown
+                                        size={12}
+                                        className={`shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                                    />
+                                </button>
+
+                                {/* Sub-navigation — smooth height transition via max-h.
+                                    max-h-40 (10 rem) comfortably fits 3 fixed items.
+                                    Animating height: auto is not CSS-transition-able;
+                                    a bounded max-h is the standard workaround. */}
+                                <div className={`overflow-hidden transition-all duration-200 ${isExpanded ? "max-h-40" : "max-h-0"}`}>
+                                    <div className="flex flex-col gap-0.5 pl-5 pb-1 pt-0.5">
+                                        {PROJECT_SUB_PAGES.map(({ key, label }) => {
+                                            const href =
+                                                key === "overview"
+                                                    ? overviewHref
+                                                    : key === "tasks"
+                                                    ? tasksHref
+                                                    : notesHref;
+                                            const isSubActive =
+                                                key === "overview"
+                                                    ? pathname === href
+                                                    : pathname.startsWith(href);
+                                            return (
+                                                <Link
+                                                    key={key}
+                                                    href={href}
+                                                    onClick={onNavigate}
+                                                    className={`py-1.5 px-2 rounded-lg text-xs transition-all ${
+                                                        isSubActive
+                                                            ? "text-tertiary font-bold bg-tertiary/5"
+                                                            : "text-lightgrey/70 hover:text-offwhite hover:bg-white/5"
+                                                    }`}
+                                                >
+                                                    {label}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
             </div>
 
             {/* ── Bottom section ── */}
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 shrink-0">
                 {newItemLink && (
                     <Link
                         href={newItemLink.href}
@@ -169,12 +256,19 @@ function SidebarContent({
 // Collapse state is intentionally stored under a single shared localStorage key
 // ("sidebar-collapsed") so the preference is consistent across all routes.
 // The user collapses once — it stays collapsed everywhere.
+//
+// Accordion expanded state is stored under "sidebar-expanded" (a JSON array of
+// slugs) so the open/closed state of each project survives page navigation.
 // ─────────────────────────────────────────────────────────────────────────────
-export default function AppSidebar({ projectLinkBuilder, homeLink, newItemLink }: AppSidebarProps) {
+export default function AppSidebar({ homeLink, newItemLink }: AppSidebarProps) {
     const [projectsList, setProjectsList] = useState<Project[]>([]);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
     const pathname = usePathname();
+
+    // Extract the active project slug from the current URL.
+    // e.g. '/projects/fitflow/tasks' → 'fitflow'
+    const activeSlug = pathname.startsWith("/projects/") ? (pathname.split("/")[2] ?? "") : "";
 
     // useSyncExternalStore is the correct React API for reading external stores
     // across SSR and hydration. The server snapshot always returns false (sidebar
@@ -190,6 +284,42 @@ export default function AppSidebar({ projectLinkBuilder, homeLink, newItemLink }
         () => localStorage.getItem("sidebar-collapsed") === "true", // client snapshot
         () => false,                                                 // server snapshot
     );
+
+    // Read the set of expanded project slugs from localStorage.
+    // Server snapshot is '[]' (all collapsed) to avoid hydration mismatches.
+    const expandedJson = useSyncExternalStore(
+        (onStoreChange) => {
+            window.addEventListener("sidebar-expanded-change", onStoreChange);
+            return () => window.removeEventListener("sidebar-expanded-change", onStoreChange);
+        },
+        () => localStorage.getItem("sidebar-expanded") ?? "[]", // client snapshot
+        () => "[]",                                              // server snapshot
+    );
+
+    // Derive a Set from the JSON string so components can do O(1) lookups.
+    const expandedArray: string[] = (() => {
+        try { return JSON.parse(expandedJson) as string[]; } catch { return []; }
+    })();
+    const expanded = new Set<string>(expandedArray);
+
+    // Auto-expand the active project whenever the URL changes.
+    useEffect(() => {
+        if (!activeSlug) return;
+        const current = parseStoredArray("sidebar-expanded");
+        if (current.includes(activeSlug)) return;
+        localStorage.setItem("sidebar-expanded", JSON.stringify([...current, activeSlug]));
+        window.dispatchEvent(new Event("sidebar-expanded-change"));
+    }, [activeSlug]);
+
+    // Toggle a project's accordion open/closed and persist the change.
+    const toggleExpanded = (slug: string) => {
+        const current = parseStoredArray("sidebar-expanded");
+        const updated = current.includes(slug)
+            ? current.filter((s) => s !== slug)
+            : [...current, slug];
+        localStorage.setItem("sidebar-expanded", JSON.stringify(updated));
+        window.dispatchEvent(new Event("sidebar-expanded-change"));
+    };
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -228,15 +358,16 @@ export default function AppSidebar({ projectLinkBuilder, homeLink, newItemLink }
         initials,
         projectsList,
         pathname,
-        projectLinkBuilder,
         homeLink,
         newItemLink,
+        expanded,
+        toggleExpanded,
     };
 
     return (
         <>
             {/* ── Desktop sidebar ── */}
-            <aside className={`hidden md:flex flex-col h-full py-4 justify-between bg-white/3 backdrop-blur-xl border-r border-white/10 shrink-0 transition-all duration-300 overflow-hidden ${
+            <aside className={`hidden md:flex flex-col h-full py-4 bg-white/3 backdrop-blur-xl border-r border-white/10 shrink-0 transition-all duration-300 overflow-hidden ${
                 collapsed ? "w-14 px-2" : "w-56 px-3"
             }`}>
                 <SidebarContent {...sharedProps} />
