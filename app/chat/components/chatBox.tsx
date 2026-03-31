@@ -316,13 +316,33 @@ export default function ChatBox({ userId }: { userId: string }) {
             {/* Messages area */}
             <div className="messageArea flex-1 overflow-y-auto space-y-3 px-6 pb-6 flex flex-col">
                 {messages.length === 0 && (
-                    <div className="guidePlaceholder flex flex-row flex-1 items-center justify-center gap-3 text-center">
+                    <div className="guidePlaceholder flex flex-col flex-1 items-center justify-center gap-5 text-center px-4">
+                        {/* Icon */}
                         <div className="w-16 h-16 rounded-2xl bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
                             <span className="text-2xl">✦</span>
                         </div>
-                        <p className="text-lightgrey font-medium text-sm max-w-xs leading-relaxed">
-                            Start a conversation. Ask about your projects, tasks, or anything on your mind.
+                        {/* Intro message */}
+                        <p className="text-offwhite font-medium text-sm max-w-md leading-relaxed">
+                            Hi, I&apos;m <strong>Hubboi</strong> — your ProjectHub assistant. I can search, query, create, and edit anything in your workspace. Just tell me what to do.
                         </p>
+                        {/* Suggested prompt chips */}
+                        <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                            {[
+                                "What are the tasks in my FitFlow project?",
+                                "Which project was about carbon emissions?",
+                                "Create a new task in ProjectHub called Set up CI pipeline",
+                                "Show me all high priority tasks across my projects",
+                            ].map((prompt) => (
+                                <button
+                                    key={prompt}
+                                    type="button"
+                                    onClick={() => setInput(prompt)}
+                                    className="bg-secondary/30 border border-white/10 hover:bg-secondary/50 hover:border-tertiary/30 text-lightgrey text-xs rounded-xl px-3 py-2 transition-colors cursor-pointer"
+                                >
+                                    {prompt}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
                 {messages.map((msg, i) => (
