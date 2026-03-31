@@ -4,7 +4,25 @@ import {
     isInternalRequestValid,
     unauthorizedResponse,
 } from "@/lib/internal-auth";
-import { createNoteForUser, updateNoteForUser } from "@/lib/services/notes";
+import { getCurrentUser } from "@/lib/auth";
+import {
+    createNoteForUser,
+    updateNoteForUser,
+    getProjectNotesForUser,
+    getUserNotesForUser,
+} from "@/lib/services/notes";
+
+export async function GET(req: NextRequest) {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const slug = req.nextUrl.searchParams.get("slug");
+    const notes = slug
+        ? await getProjectNotesForUser(user.id, slug)
+        : await getUserNotesForUser(user.id);
+
+    return NextResponse.json(notes);
+}
 
 export async function POST(req: NextRequest) {
     const { secret } = verifyInternalRequest(req);
