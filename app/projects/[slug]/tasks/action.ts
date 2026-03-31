@@ -32,6 +32,9 @@ export async function getProjectTasks(slug: string): Promise<Task[]> {
             assignee: {
                 select: { name: true, avatarUrl: true },
             },
+            project: {
+                select: { title: true, slug: true },
+            },
         },
     });
 }
