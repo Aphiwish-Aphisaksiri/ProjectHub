@@ -2,6 +2,47 @@ import { prisma } from "@/lib/prisma";
 import { NOTE_BODY_LIMIT } from "@/app/notes/constants";
 import { syncNoteEmbedding } from "@/lib/services/embedding";
 
+export async function getProjectNotesForUser(userId: string, slug: string) {
+    return prisma.note.findMany({
+        where: {
+            project: { slug, ownerId: userId },
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            title: true,
+            body: true,
+            createdAt: true,
+            updatedAt: true,
+            author: {
+                select: { name: true, avatarUrl: true },
+            },
+        },
+    });
+}
+
+export async function getUserNotesForUser(userId: string) {
+    const notes = await prisma.note.findMany({
+        where: {
+            project: { ownerId: userId },
+        },
+        include: {
+            project: {
+                select: { title: true, id: true },
+            },
+            author: {
+                select: { name: true, avatarUrl: true },
+            },
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    return notes.filter(
+        (note): note is typeof note & { project: { id: string; title: string } } =>
+            note.project !== null,
+    );
+}
+
 export async function createNoteForUser(
     userId: string,
     input: {

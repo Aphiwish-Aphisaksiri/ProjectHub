@@ -1,6 +1,43 @@
 import { prisma } from "@/lib/prisma";
 import { syncTaskEmbedding } from "@/lib/services/embedding";
 
+const TASK_SELECT = {
+    id: true,
+    taskNumber: true,
+    title: true,
+    body: true,
+    status: true,
+    priority: true,
+    dueDate: true,
+    createdAt: true,
+    updatedAt: true,
+    projectId: true,
+    assignee: {
+        select: { name: true, avatarUrl: true },
+    },
+    project: {
+        select: { title: true, slug: true },
+    },
+} as const;
+
+export async function getAllTasksForUser(userId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (prisma.task.findMany as any)({
+        where: { project: { ownerId: userId } },
+        orderBy: { createdAt: "asc" },
+        select: TASK_SELECT,
+    });
+}
+
+export async function getProjectTasksForUser(userId: string, slug: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (prisma.task.findMany as any)({
+        where: { project: { slug, ownerId: userId } },
+        orderBy: { createdAt: "asc" },
+        select: TASK_SELECT,
+    });
+}
+
 export async function createTaskForUser(
     userId: string,
     input: {

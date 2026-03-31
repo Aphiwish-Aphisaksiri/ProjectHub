@@ -17,6 +17,12 @@ vi.mock('@/lib/internal-auth', () => ({
 vi.mock('@/lib/services/notes', () => ({
     createNoteForUser: vi.fn(),
     updateNoteForUser: vi.fn(),
+    getProjectNotesForUser: vi.fn(),
+    getUserNotesForUser: vi.fn(),
+}))
+
+vi.mock('@/lib/auth', () => ({
+    getCurrentUser: vi.fn(),
 }))
 
 import { verifyInternalRequest, isInternalRequestValid } from '@/lib/internal-auth'
