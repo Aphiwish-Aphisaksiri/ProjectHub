@@ -22,6 +22,7 @@ from services.tool_executor import (
     _execute_create_note,
     _execute_update_note,
     _execute_update_project,
+    _execute_delete_task,
 )
 
 
@@ -40,16 +41,18 @@ class TestToolSchemas:
         "create_note",
         "update_note",
         "update_project",
+        "delete_task",
     ])
     def test_tool_is_registered(self, name):
         assert name in self._tool_names
 
     def test_total_tool_count(self):
-        assert len(TOOLS) == 7
+        assert len(TOOLS) == 8
 
     @pytest.mark.parametrize("name,expected_required", [
         ("create_task", ["project_name", "title"]),
         ("update_task", ["task_number", "project_name"]),
+        ("delete_task", ["task_number", "project_name"]),
         ("create_note", ["project_name", "title", "body"]),
         ("update_note", ["note_title", "project_name"]),
         ("update_project", ["project_name"]),
@@ -199,6 +202,11 @@ class TestExecuteToolDispatcher:
     async def test_dispatches_update_project(self):
         with patch("services.tool_executor._execute_update_project", new_callable=AsyncMock, return_value=("ok", {})) as m:
             await execute_tool("update_project", {"project_name": "P"}, "u1")
+        m.assert_awaited_once()
+
+    async def test_dispatches_delete_task(self):
+        with patch("services.tool_executor._execute_delete_task", new_callable=AsyncMock, return_value=("ok", {})) as m:
+            await execute_tool("delete_task", {"task_number": 1, "project_name": "P"}, "u1")
         m.assert_awaited_once()
 
 
@@ -457,3 +465,37 @@ class TestExecuteUpdateProject:
 
             result, _ = await _execute_update_project({"project_name": "Alpha"}, "u1")
         assert "Failed" in result
+
+# ��� _execute_delete_task �����������������������������������������������������
+
+class TestExecuteDeleteTask:
+    @pytest.fixture(autouse=True)
+    def _patch_pool(self):
+        self.conn = _make_conn([])
+        self.pool = _pool_with_conn(self.conn)
+        with patch("db.get_pool", new_callable=AsyncMock, return_value=self.pool):
+            yield
+
+    async def test_task_not_found(self):
+        self.conn.fetchrow = AsyncMock(return_value=None)
+        result, info = await _execute_delete_task({"task_number": 99, "project_name": "Alpha"}, "u1")
+        assert "not found" in result
+        assert info == {}
+
+    async def test_missing_task_number(self):
+        result, info = await _execute_delete_task({"project_name": "Alpha"}, "u1")
+        assert "required" in result
+        assert info == {}
+
+    async def test_stages_deletion(self):
+        row = {"id": "t1", "title": "Fix bug", "body": "", "status": "TODO",
+               "priority": "HIGH", "dueDate": None, "projectSlug": "alpha"}
+        self.conn.fetchrow = AsyncMock(return_value=row)
+        result, info = await _execute_delete_task({"task_number": 1, "project_name": "Alpha"}, "u1")
+        assert "ready to be deleted" in result or "awaiting user confirmation" in result
+        assert info.get("requires_confirmation") is True
+        confirm = info.get("confirm_data", {})
+        assert confirm.get("type") == "delete_task"
+        assert confirm.get("taskId") == "t1"
+        assert confirm.get("taskNumber") == 1
+        assert confirm.get("taskTitle") == "Fix bug"

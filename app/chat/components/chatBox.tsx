@@ -9,6 +9,14 @@ type ToolCall = {
     done: boolean
 }
 
+type ConfirmData = {
+    type: "delete_task"
+    taskId: string
+    taskNumber: number
+    taskTitle: string
+    projectTitle: string
+}
+
 type Message = {
     role: "user" | "assistant" | "error"
     content: string
@@ -17,6 +25,7 @@ type Message = {
     thinkingEnabled?: boolean
     toolCalls?: ToolCall[]
     notices?: string[]
+    pendingAction?: ConfirmData
 }
 
 type OllamaModel = {
@@ -34,6 +43,7 @@ function getToolLabel(name: string, args: Record<string, unknown>): string {
     if (name === "query_structured_data") return `Querying project data${suffix}`
     if (name === "create_task") return `Creating task "${args.title ?? ""}"`
     if (name === "update_task") return `Updating task #${args.task_number ?? ""}`
+    if (name === "delete_task") return `Staging deletion of task #${args.task_number ?? ""}`
     if (name === "create_note") return `Creating note "${args.title ?? ""}"`
     if (name === "update_note") return `Updating note "${args.note_title ?? ""}"`
     if (name === "update_project") return `Updating project "${args.project_name ?? ""}"`
@@ -85,6 +95,74 @@ function ThinkingBlock({ content }: { content: string }) {
                     {content}
                 </div>
             )}
+        </div>
+    )
+}
+
+function ConfirmActionCard({ data, userId, onResolved }: { data: ConfirmData; userId: string; onResolved: () => void }) {
+    const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle")
+    const [errorMsg, setErrorMsg] = useState("")
+
+    async function handleConfirm() {
+        setState("loading")
+        try {
+            const res = await fetch("/api/tasks", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, taskId: data.taskId }),
+            })
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}))
+                setErrorMsg(body.error ?? "Delete failed.")
+                setState("error")
+                return
+            }
+            setState("done")
+            // Dismiss the card after showing success briefly
+            setTimeout(onResolved, 2000)
+        } catch {
+            setErrorMsg("Network error. Please try again.")
+            setState("error")
+        }
+    }
+
+    if (state === "done") {
+        return (
+            <div className="my-2 rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-xs text-green-300">
+                Task #{data.taskNumber} &ldquo;{data.taskTitle}&rdquo; deleted.
+            </div>
+        )
+    }
+
+    return (
+        <div className="my-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs space-y-2">
+            <div className="flex items-center gap-1.5 text-red-300 font-semibold">
+                <span>⚠</span> Confirm Deletion
+            </div>
+            <p className="text-lightgrey/80 leading-relaxed">
+                Task #{data.taskNumber} &mdash; &ldquo;{data.taskTitle}&rdquo;
+                <br />
+                <span className="text-lightgrey/50">Project: {data.projectTitle}</span>
+            </p>
+            {state === "error" && (
+                <p className="text-red-400">{errorMsg}</p>
+            )}
+            <div className="flex gap-2 pt-1">
+                <button
+                    onClick={onResolved}
+                    disabled={state === "loading"}
+                    className="px-3 py-1.5 rounded-xl border border-white/10 text-lightgrey hover:bg-white/10 transition-colors disabled:opacity-40"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleConfirm}
+                    disabled={state === "loading"}
+                    className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold transition-colors disabled:opacity-40"
+                >
+                    {state === "loading" ? "Deleting..." : "Delete Task"}
+                </button>
+            </div>
         </div>
     )
 }
@@ -296,6 +374,17 @@ export default function ChatBox({ userId }: { userId: string }) {
             })
         } else if (chunk.startsWith("__METRICS__")) {
             // Metrics handled server-side, ignore on frontend
+        } else if (chunk.startsWith("__CONFIRM_REQUIRED__")) {
+            const confirmData = JSON.parse(chunk.replace("__CONFIRM_REQUIRED__", "")) as ConfirmData
+            setMessages(prev => {
+                const updated = [...prev]
+                const last = updated[updated.length - 1]
+                updated[updated.length - 1] = {
+                    ...last,
+                    pendingAction: confirmData,
+                }
+                return updated
+            })
         } else {
             // First content token — mark all in-flight tool calls as done
             setMessages(prev => {
@@ -368,6 +457,18 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {/* Tool call indicators — show as soon as LLM decides to search */}
                             {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
                                 <ToolCallBlock toolCalls={msg.toolCalls} />
+                            )}
+                            {/* Confirmation card for destructive actions */}
+                            {msg.role === "assistant" && msg.pendingAction && (
+                                <ConfirmActionCard
+                                    data={msg.pendingAction}
+                                    userId={userId}
+                                    onResolved={() => {
+                                        setMessages(prev => prev.map((m, idx) =>
+                                            idx === i ? { ...m, pendingAction: undefined } : m
+                                        ))
+                                    }}
+                                />
                             )}
                             {/* Message content */}
                             {msg.role === "assistant" && msg.content === "" && loading && !msg.toolCalls?.length

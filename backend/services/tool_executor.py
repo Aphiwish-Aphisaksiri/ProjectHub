@@ -265,6 +265,32 @@ TOOLS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_task",
+            "description": (
+                "Stage a task for permanent deletion. Use ONLY when the user explicitly asks to "
+                "delete or remove a task. This does NOT delete immediately — it will ask the user "
+                "to confirm before any data is removed. "
+                "You MUST call query_structured_data first to confirm the task exists."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_number": {
+                        "type": "integer",
+                        "description": "The task number (e.g. #1, #5) to delete"
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "The project title the task belongs to"
+                    }
+                },
+                "required": ["task_number", "project_name"]
+            }
+        }
+    },
 ]
 
 # ─── Tool dispatcher ──────────────────────────────────────────────────────────
@@ -324,6 +350,9 @@ async def execute_tool(name: str, args: dict, user_id: str) -> tuple[str, dict]:
 
     elif name == "update_project":
         return await _execute_update_project(args, user_id)
+
+    elif name == "delete_task":
+        return await _execute_delete_task(args, user_id)
 
     return f"Unknown tool: {name}", {}
 
@@ -573,4 +602,37 @@ async def _execute_update_project(args: dict, user_id: str) -> tuple[str, dict]:
     return (
         f"Project **{row['title']}** updated: {change_str}",
         {"sources": ["write_project"], "scores": [], "count": 1},
+    )
+
+
+# ─── delete_task ─────────────────────────────────────────────────────────────
+
+async def _execute_delete_task(args: dict, user_id: str) -> tuple[str, dict]:
+    task_number = args.get("task_number")
+    project_name = args.get("project_name", "")
+    if not task_number:
+        return "Task number is required to delete a task.", {}
+
+    task = await _resolve_task_id(user_id, int(task_number), project_name)
+    if not task:
+        return f"Task #{task_number} not found in project '{project_name}'.", {}
+
+    # Stage the deletion — the actual DELETE is performed by the frontend after
+    # the user confirms via the confirmation UI.
+    return (
+        f"Task #{task_number} \"{task['title']}\" in project '{project_name}' is ready to be deleted. "
+        f"Please confirm the deletion using the confirmation prompt above.",
+        {
+            "sources": ["delete_task_staged"],
+            "scores": [],
+            "count": 1,
+            "requires_confirmation": True,
+            "confirm_data": {
+                "type": "delete_task",
+                "taskId": task["id"],
+                "taskNumber": task_number,
+                "taskTitle": task["title"],
+                "projectTitle": project_name,
+            },
+        },
     )

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from embeddings import embed_source
+from embeddings import embed_source, delete_embeddings
 
 router = APIRouter(prefix="/embed", tags=["embeddings"])
 
@@ -61,5 +61,14 @@ async def embed_note(req: NoteEmbedRequest):
             text=req.text
         )
         return {"success": True, "sourceId": req.sourceId}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/task/{source_id}")
+async def delete_task_embeddings(source_id: str):
+    try:
+        await delete_embeddings("task", source_id)
+        return {"success": True, "sourceId": source_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -104,6 +104,11 @@ async def chat(req: ChatRequest):
                         total_result_count += log_info.get("count", 0)
                         tool_calls_summary.append(f"{name}({json.dumps(args)})")
 
+                        # Destructive tools that require user confirmation before executing
+                        if log_info.get("requires_confirmation"):
+                            confirm_data = log_info.get("confirm_data", {})
+                            yield f"\x1e__CONFIRM_REQUIRED__{json.dumps(confirm_data)}\x1e"
+
                         messages.append({"role": "tool", "name": name, "content": result})
 
                 final_messages = messages

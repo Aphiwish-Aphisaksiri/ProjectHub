@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { syncTaskEmbedding } from "@/lib/services/embedding";
+import { syncTaskEmbedding, deleteTaskEmbedding } from "@/lib/services/embedding";
 
 const TASK_SELECT = {
     id: true,
@@ -139,4 +139,20 @@ export async function updateTaskStatusForUser(
     });
 
     return updated;
+}
+
+export async function deleteTaskForUser(userId: string, taskId: string) {
+    const task = await prisma.task.findFirst({
+        where: { id: taskId, project: { ownerId: userId } },
+        select: { id: true, title: true, taskNumber: true, project: { select: { id: true, slug: true } } },
+    });
+    if (!task) throw new Error("Task not found or access denied.");
+
+    await prisma.task.delete({ where: { id: taskId } });
+
+    deleteTaskEmbedding(task.id).catch((err) => {
+        console.error("Embedding cleanup failed for deleted task:", task.id, err);
+    });
+
+    return { taskId: task.id, taskNumber: task.taskNumber, title: task.title, projectSlug: task.project?.slug };
 }

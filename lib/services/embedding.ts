@@ -52,3 +52,10 @@ export async function syncNoteEmbedding(
         }),
     });
 }
+
+export async function deleteTaskEmbedding(taskId: string) {
+    await fetch(`${BACKEND_URL}/embed/task/${taskId}`, {
+        method: "DELETE",
+        cache: "no-store",
+    });
+}
