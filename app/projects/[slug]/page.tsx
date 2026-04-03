@@ -37,7 +37,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         );
     }
 
-    const [inProgressCount, doneCount] = await Promise.all([
+    const [todoCount, inProgressCount, doneCount] = await Promise.all([
+        prisma.task.count({ where: { projectId: project.id, status: "TODO" } }),
         prisma.task.count({ where: { projectId: project.id, status: "IN_PROGRESS" } }),
         prisma.task.count({ where: { projectId: project.id, status: "DONE" } }),
     ]);
@@ -118,7 +119,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             {/* ── Stats Row ── */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
                 {[
-                    { label: "Total Tasks",  value: project._count.tasks, icon: FiCheckSquare, color: "text-tertiary",      bg: "bg-tertiary/10",      border: "border-tertiary/20" },
+                    { label: "TODO",         value: todoCount,            icon: FiCheckSquare, color: "text-tertiary",      bg: "bg-tertiary/10",      border: "border-tertiary/20" },
                     { label: "In Progress",  value: inProgressCount,      icon: FiCheckSquare, color: "text-secondary-400", bg: "bg-secondary-400/10", border: "border-secondary-400/20" },
                     { label: "Completed",    value: doneCount,            icon: FiCheckSquare, color: "text-green",         bg: "bg-green/10",         border: "border-green/20" },
                     { label: "Notes",        value: project._count.notes, icon: FiFileText,    color: "text-lightgrey",     bg: "bg-lightgrey/10",     border: "border-lightgrey/20" },
@@ -160,8 +161,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                     ) : (
                         <div className="flex flex-col gap-2.5">
                             {project.tasks.map((task) => (
-                                <div
+                                <Link
                                     key={task.id}
+                                    href={`/tasks/${task.id}`}
                                     className="flex items-center justify-between gap-3 p-3 bg-white/5 hover:bg-white/[0.07] rounded-xl border border-white/5 transition-colors"
                                 >
                                     <div className="flex-1 min-w-0">
@@ -177,7 +179,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                                     >
                                         {priorityConfig[task.priority]?.label ?? task.priority}
                                     </span>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )}
@@ -202,9 +204,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                     ) : (
                         <div className="flex flex-col gap-2.5">
                             {project.notes.map((note) => (
-                                <div
+                                <Link
                                     key={note.id}
-                                    className="p-3 bg-white/5 hover:bg-white/[0.07] rounded-xl border border-white/5 transition-colors"
+                                    href={`/notes/${note.id}`}
+                                    className="p-3 bg-white/5 hover:bg-white/[0.07] rounded-xl border border-white/5 transition-colors block"
                                 >
                                     <p className="text-offwhite text-sm font-bold truncate">{note.title}</p>
                                     {note.body && (
@@ -217,7 +220,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                                             year: "numeric",
                                         })}
                                     </p>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )}
