@@ -86,7 +86,11 @@ export default async function TaskDetailPage({
         };
 
     const backHref = back ?? "/tasks";
-    const backLabel = back ? `Back to ${task.project.title} Tasks` : "All Tasks";
+    const backLabel = back
+        ? back.endsWith("/tasks")
+            ? `Back to ${task.project.title} Tasks`
+            : "Back to Project Overview"
+        : "All Tasks";
     const editHref = `/tasks/${task.id}/edit${back ? `?back=${encodeURIComponent(back)}` : ""}`;
 
     return (

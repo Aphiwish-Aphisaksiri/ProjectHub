@@ -163,7 +163,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                             {project.tasks.map((task) => (
                                 <Link
                                     key={task.id}
-                                    href={`/tasks/${task.id}`}
+                                    href={`/tasks/${task.id}?back=${encodeURIComponent(`/projects/${slug}`)}`}
                                     className="flex items-center justify-between gap-3 p-3 bg-white/5 hover:bg-white/[0.07] rounded-xl border border-white/5 transition-colors"
                                 >
                                     <div className="flex-1 min-w-0">
@@ -206,7 +206,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                             {project.notes.map((note) => (
                                 <Link
                                     key={note.id}
-                                    href={`/notes/${note.id}`}
+                                    href={`/notes/${note.id}?back=${encodeURIComponent(`/projects/${slug}`)}`}
                                     className="p-3 bg-white/5 hover:bg-white/[0.07] rounded-xl border border-white/5 transition-colors block"
                                 >
                                     <p className="text-offwhite text-sm font-bold truncate">{note.title}</p>
