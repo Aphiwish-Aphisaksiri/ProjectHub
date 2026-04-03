@@ -40,7 +40,7 @@ export default async function NoteDetailPage({
                     <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-4">
                         <div className="max-w-4xl">
                             <Link href={back ?? "/notes"} className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4">
-                                <FiArrowLeft /> {back ? "Back to Project Notes" : "Back to Notes"}
+                                <FiArrowLeft /> {back ? (back.endsWith("/notes") ? `Back to ${note.project.title} Notes` : "Back to Project Overview") : "Back to Notes"}
                             </Link>
 
                             <div className="flex items-center gap-4">
