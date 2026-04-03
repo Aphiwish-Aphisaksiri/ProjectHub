@@ -99,7 +99,7 @@ function ThinkingBlock({ content }: { content: string }) {
     )
 }
 
-function ConfirmActionCard({ data, userId, onResolved }: { data: ConfirmData; userId: string; onResolved: () => void }) {
+function ConfirmActionCard({ data, onResolved }: { data: ConfirmData; onResolved: () => void }) {
     const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle")
     const [errorMsg, setErrorMsg] = useState("")
 
@@ -109,7 +109,7 @@ function ConfirmActionCard({ data, userId, onResolved }: { data: ConfirmData; us
             const res = await fetch("/api/tasks", {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId, taskId: data.taskId }),
+                body: JSON.stringify({ taskId: data.taskId }),
             })
             if (!res.ok) {
                 const body = await res.json().catch(() => ({}))
@@ -462,7 +462,6 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {msg.role === "assistant" && msg.pendingAction && (
                                 <ConfirmActionCard
                                     data={msg.pendingAction}
-                                    userId={userId}
                                     onResolved={() => {
                                         setMessages(prev => prev.map((m, idx) =>
                                             idx === i ? { ...m, pendingAction: undefined } : m

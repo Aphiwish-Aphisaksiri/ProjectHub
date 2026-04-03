@@ -82,18 +82,18 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-    const { secret } = verifyInternalRequest(req);
-    if (!isInternalRequestValid(secret)) return unauthorizedResponse();
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     try {
         const body = await req.json();
-        const { userId, taskId } = body;
+        const { taskId } = body;
 
-        if (!userId || !taskId) {
+        if (!taskId) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        const deleted = await deleteTaskForUser(userId, taskId);
+        const deleted = await deleteTaskForUser(user.id, taskId);
         return NextResponse.json(deleted);
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Internal server error";
