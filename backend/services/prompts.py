@@ -22,7 +22,7 @@ You have these tools available:
 - **update_project**: Update a project's title, description, or visibility.
 
 **Delete tools** (for removing data):
-- **delete_task**: Delete an existing task. You MUST first use query_structured_data to find the task number.
+- **delete_task**: Request a deletion of existing task where user will confirm on frontend. You MUST first use query_structured_data to find the task number.
 
 Rules:
 - ALWAYS call a read tool before answering any question about the user's data
