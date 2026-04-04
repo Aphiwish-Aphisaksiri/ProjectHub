@@ -59,3 +59,17 @@ export async function deleteTaskEmbedding(taskId: string) {
         cache: "no-store",
     });
 }
+
+export async function deleteNoteEmbedding(noteId: string) {
+    await fetch(`${BACKEND_URL}/embed/note/${noteId}`, {
+        method: "DELETE",
+        cache: "no-store",
+    });
+}
+
+export async function deleteProjectEmbedding(projectId: string) {
+    await fetch(`${BACKEND_URL}/embed/project/${projectId}`, {
+        method: "DELETE",
+        cache: "no-store",
+    });
+}

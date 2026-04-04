@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NOTE_BODY_LIMIT } from "@/app/notes/constants";
-import { syncNoteEmbedding } from "@/lib/services/embedding";
+import { syncNoteEmbedding, deleteNoteEmbedding } from "@/lib/services/embedding";
 
 export async function getProjectNotesForUser(userId: string, slug: string) {
     return prisma.note.findMany({
@@ -117,4 +117,20 @@ export async function updateNoteForUser(
     });
 
     return { updatedNote, projectSlug: existingNote.project.slug };
+}
+
+export async function deleteNoteForUser(userId: string, noteId: string) {
+    const note = await prisma.note.findFirst({
+        where: { id: noteId, project: { ownerId: userId } },
+        select: { id: true, title: true, project: { select: { id: true, slug: true } } },
+    });
+    if (!note) throw new Error("Note not found or access denied.");
+
+    await prisma.note.delete({ where: { id: noteId } });
+
+    deleteNoteEmbedding(note.id).catch((err) => {
+        console.error("Embedding cleanup failed for deleted note:", note.id, err);
+    });
+
+    return { noteId: note.id, title: note.title, projectSlug: note.project?.slug };
 }

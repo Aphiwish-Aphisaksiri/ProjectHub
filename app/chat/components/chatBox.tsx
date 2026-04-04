@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 
@@ -9,13 +9,10 @@ type ToolCall = {
     done: boolean
 }
 
-type ConfirmData = {
-    type: "delete_task"
-    taskId: string
-    taskNumber: number
-    taskTitle: string
-    projectTitle: string
-}
+type ConfirmData =
+    | { type: "delete_task";    taskId: string; taskNumber: number; taskTitle: string; projectTitle: string }
+    | { type: "delete_note";    noteId: string; noteTitle: string; projectTitle: string }
+    | { type: "delete_project"; projectId: string; projectTitle: string; taskCount: number; noteCount: number }
 
 type Message = {
     role: "user" | "assistant" | "error"
@@ -44,6 +41,8 @@ function getToolLabel(name: string, args: Record<string, unknown>): string {
     if (name === "create_task") return `Creating task "${args.title ?? ""}"`
     if (name === "update_task") return `Updating task #${args.task_number ?? ""}`
     if (name === "delete_task") return `Staging deletion of task #${args.task_number ?? ""}`
+    if (name === "delete_note") return `Staging deletion of note "${args.note_title ?? ""}"`
+    if (name === "delete_project") return `Staging deletion of project "${args.project_name ?? ""}"`
     if (name === "create_note") return `Creating note "${args.title ?? ""}"`
     if (name === "update_note") return `Updating note "${args.note_title ?? ""}"`
     if (name === "update_project") return `Updating project "${args.project_name ?? ""}"`
@@ -106,19 +105,31 @@ function ConfirmActionCard({ data, onResolved }: { data: ConfirmData; onResolved
     async function handleConfirm() {
         setState("loading")
         try {
-            const res = await fetch("/api/tasks", {
+            let url = ""
+            let body: Record<string, unknown> = {}
+            if (data.type === "delete_task") {
+                url = "/api/tasks"
+                body = { taskId: data.taskId }
+            } else if (data.type === "delete_note") {
+                url = "/api/notes"
+                body = { noteId: data.noteId }
+            } else {
+                url = "/api/projects"
+                body = { projectId: data.projectId }
+            }
+
+            const res = await fetch(url, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ taskId: data.taskId }),
+                body: JSON.stringify(body),
             })
             if (!res.ok) {
-                const body = await res.json().catch(() => ({}))
-                setErrorMsg(body.error ?? "Delete failed.")
+                const resBody = await res.json().catch(() => ({}))
+                setErrorMsg(resBody.error ?? "Delete failed.")
                 setState("error")
                 return
             }
             setState("done")
-            // Dismiss the card after showing success briefly
             setTimeout(onResolved, 2000)
         } catch {
             setErrorMsg("Network error. Please try again.")
@@ -126,27 +137,59 @@ function ConfirmActionCard({ data, onResolved }: { data: ConfirmData; onResolved
         }
     }
 
+    // ── Resolved label ────────────────────────────────────────────────────
     if (state === "done") {
+        const label =
+            data.type === "delete_task"    ? `Task #${data.taskNumber} \u201c${data.taskTitle}\u201d deleted.`
+            : data.type === "delete_note"   ? `Note \u201c${data.noteTitle}\u201d deleted.`
+            : `Project \u201c${data.projectTitle}\u201d and all its contents deleted.`
         return (
             <div className="my-2 rounded-2xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-xs text-green-300">
-                Task #{data.taskNumber} &ldquo;{data.taskTitle}&rdquo; deleted.
+                {label}
             </div>
         )
     }
 
-    return (
-        <div className="my-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs space-y-2">
-            <div className="flex items-center gap-1.5 text-red-300 font-semibold">
-                <span>⚠</span> Confirm Deletion
-            </div>
+    // ── Warning body ──────────────────────────────────────────────────────
+    const isProject = data.type === "delete_project"
+    const header = isProject ? "\u26a0 Permanent Deletion — Cannot Be Undone" : "\u26a0 Confirm Deletion"
+
+    let description: React.ReactNode
+    if (data.type === "delete_task") {
+        description = (
             <p className="text-lightgrey/80 leading-relaxed">
                 Task #{data.taskNumber} &mdash; &ldquo;{data.taskTitle}&rdquo;
-                <br />
-                <span className="text-lightgrey/50">Project: {data.projectTitle}</span>
+                <br /><span className="text-lightgrey/50">Project: {data.projectTitle}</span>
             </p>
-            {state === "error" && (
-                <p className="text-red-400">{errorMsg}</p>
-            )}
+        )
+    } else if (data.type === "delete_note") {
+        description = (
+            <p className="text-lightgrey/80 leading-relaxed">
+                Note &ldquo;{data.noteTitle}&rdquo;
+                <br /><span className="text-lightgrey/50">Project: {data.projectTitle}</span>
+            </p>
+        )
+    } else {
+        description = (
+            <p className="text-lightgrey/80 leading-relaxed">
+                Project &ldquo;{data.projectTitle}&rdquo;
+                <br />
+                <span className="text-red-300/80">
+                    {data.taskCount} task{data.taskCount !== 1 ? "s" : ""} and {data.noteCount} note{data.noteCount !== 1 ? "s" : ""} will also be permanently deleted.
+                </span>
+            </p>
+        )
+    }
+
+    return (
+        <div className={`my-2 rounded-2xl border px-4 py-3 text-xs space-y-2 ${
+            isProject ? "border-red-500/50 bg-red-500/15" : "border-red-500/30 bg-red-500/10"
+        }`}>
+            <div className="flex items-center gap-1.5 text-red-300 font-semibold">
+                <span>&#9888;</span> {header}
+            </div>
+            {description}
+            {state === "error" && <p className="text-red-400">{errorMsg}</p>}
             <div className="flex gap-2 pt-1">
                 <button
                     onClick={onResolved}
@@ -160,7 +203,7 @@ function ConfirmActionCard({ data, onResolved }: { data: ConfirmData; onResolved
                     disabled={state === "loading"}
                     className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold transition-colors disabled:opacity-40"
                 >
-                    {state === "loading" ? "Deleting..." : "Delete Task"}
+                    {state === "loading" ? "Deleting..." : isProject ? "Delete Project" : data.type === "delete_note" ? "Delete Note" : "Delete Task"}
                 </button>
             </div>
         </div>

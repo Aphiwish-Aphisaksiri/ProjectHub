@@ -10,6 +10,7 @@ import {
     updateNoteForUser,
     getProjectNotesForUser,
     getUserNotesForUser,
+    deleteNoteForUser,
 } from "@/lib/services/notes";
 
 export async function GET(req: NextRequest) {
@@ -68,6 +69,26 @@ export async function PATCH(req: NextRequest) {
         });
 
         return NextResponse.json(updatedNote);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Internal server error";
+        return NextResponse.json({ error: message }, { status: 400 });
+    }
+}
+
+export async function DELETE(req: NextRequest) {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    try {
+        const body = await req.json();
+        const { noteId } = body;
+
+        if (!noteId) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const deleted = await deleteNoteForUser(user.id, noteId);
+        return NextResponse.json(deleted);
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Internal server error";
         return NextResponse.json({ error: message }, { status: 400 });

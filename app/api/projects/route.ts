@@ -8,7 +8,7 @@ import {
     isInternalRequestValid,
     unauthorizedResponse,
 } from "@/lib/internal-auth";
-import { updateProjectForUser } from "@/lib/services/projects";
+import { updateProjectForUser, deleteProjectForUser } from "@/lib/services/projects";
 
 export async function GET() {
     const user = await getCurrentUser();
@@ -50,6 +50,26 @@ export async function PATCH(req: NextRequest) {
         });
 
         return NextResponse.json(updated);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Internal server error";
+        return NextResponse.json({ error: message }, { status: 400 });
+    }
+}
+
+export async function DELETE(req: NextRequest) {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    try {
+        const body = await req.json();
+        const { projectId } = body;
+
+        if (!projectId) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+
+        const deleted = await deleteProjectForUser(user.id, projectId);
+        return NextResponse.json(deleted);
     } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Internal server error";
         return NextResponse.json({ error: message }, { status: 400 });
