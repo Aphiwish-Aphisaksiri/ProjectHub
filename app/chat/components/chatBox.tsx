@@ -25,7 +25,7 @@ type Message = {
     thinkingEnabled?: boolean
     toolCalls?: ToolCall[]
     notices?: string[]
-    pendingAction?: ConfirmData
+    pendingActions?: ConfirmData[]
 }
 
 type OllamaModel = {
@@ -381,7 +381,7 @@ export default function ChatBox({ userId }: { userId: string }) {
                 const last = updated[updated.length - 1]
                 updated[updated.length - 1] = {
                     ...last,
-                    pendingAction: confirmData,
+                    pendingActions: [...(last.pendingActions ?? []), confirmData],
                 }
                 return updated
             })
@@ -458,17 +458,20 @@ export default function ChatBox({ userId }: { userId: string }) {
                             {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
                                 <ToolCallBlock toolCalls={msg.toolCalls} />
                             )}
-                            {/* Confirmation card for destructive actions */}
-                            {msg.role === "assistant" && msg.pendingAction && (
+                            {/* Confirmation cards for destructive actions — one per staged deletion */}
+                            {msg.role === "assistant" && msg.pendingActions?.map((action, actionIdx) => (
                                 <ConfirmActionCard
-                                    data={msg.pendingAction}
+                                    key={actionIdx}
+                                    data={action}
                                     onResolved={() => {
                                         setMessages(prev => prev.map((m, idx) =>
-                                            idx === i ? { ...m, pendingAction: undefined } : m
+                                            idx === i
+                                                ? { ...m, pendingActions: m.pendingActions?.filter((_, j) => j !== actionIdx) }
+                                                : m
                                         ))
                                     }}
                                 />
-                            )}
+                            ))}
                             {/* Message content */}
                             {msg.role === "assistant" && msg.content === "" && loading && !msg.toolCalls?.length
                                 ? <ThinkingIndicator />
