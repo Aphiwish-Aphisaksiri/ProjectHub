@@ -265,6 +265,80 @@ TOOLS = [
             }
         }
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_task",
+            "description": (
+                "Stage a task for permanent deletion. Use ONLY when the user explicitly asks to "
+                "delete or remove a task. This does NOT delete immediately — it will ask the user "
+                "to confirm before any data is removed. "
+                "You MUST call query_structured_data first to confirm the task exists."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_number": {
+                        "type": "integer",
+                        "description": "The task number (e.g. #1, #5) to delete"
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "The project title the task belongs to"
+                    }
+                },
+                "required": ["task_number", "project_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_note",
+            "description": (
+                "Stage a note for permanent deletion. Use ONLY when the user explicitly asks to "
+                "delete or remove a note. This does NOT delete immediately — it will ask the user "
+                "to confirm before any data is removed. "
+                "You MUST call query_structured_data with get_notes_for_project first to find the note."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "note_title": {
+                        "type": "string",
+                        "description": "The title of the note to delete"
+                    },
+                    "project_name": {
+                        "type": "string",
+                        "description": "The project title the note belongs to"
+                    }
+                },
+                "required": ["note_title", "project_name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_project",
+            "description": (
+                "Stage a project for permanent deletion. Use ONLY when the user explicitly asks to "
+                "delete or remove an entire project. This does NOT delete immediately — it will ask "
+                "the user to confirm before any data is removed. "
+                "WARNING: this will permanently delete ALL tasks and notes inside the project."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "project_name": {
+                        "type": "string",
+                        "description": "The project title to delete"
+                    }
+                },
+                "required": ["project_name"]
+            }
+        }
+    },
 ]
 
 # ─── Tool dispatcher ──────────────────────────────────────────────────────────
@@ -324,6 +398,15 @@ async def execute_tool(name: str, args: dict, user_id: str) -> tuple[str, dict]:
 
     elif name == "update_project":
         return await _execute_update_project(args, user_id)
+
+    elif name == "delete_task":
+        return await _execute_delete_task(args, user_id)
+
+    elif name == "delete_note":
+        return await _execute_delete_note(args, user_id)
+
+    elif name == "delete_project":
+        return await _execute_delete_project(args, user_id)
 
     return f"Unknown tool: {name}", {}
 
@@ -573,4 +656,120 @@ async def _execute_update_project(args: dict, user_id: str) -> tuple[str, dict]:
     return (
         f"Project **{row['title']}** updated: {change_str}",
         {"sources": ["write_project"], "scores": [], "count": 1},
+    )
+
+
+# ─── delete_task ─────────────────────────────────────────────────────────────
+
+async def _execute_delete_task(args: dict, user_id: str) -> tuple[str, dict]:
+    task_number = args.get("task_number")
+    project_name = args.get("project_name", "")
+    if not task_number:
+        return "Task number is required to delete a task.", {}
+
+    task = await _resolve_task_id(user_id, int(task_number), project_name)
+    if not task:
+        return f"Task #{task_number} not found in project '{project_name}'.", {}
+
+    # Stage the deletion — the actual DELETE is performed by the frontend after
+    # the user confirms via the confirmation UI.
+    return (
+        f"Task #{task_number} \"{task['title']}\" in project '{project_name}' is ready to be deleted. "
+        f"Please confirm the deletion using the confirmation prompt above.",
+        {
+            "sources": ["delete_task_staged"],
+            "scores": [],
+            "count": 1,
+            "requires_confirmation": True,
+            "confirm_data": {
+                "type": "delete_task",
+                "taskId": task["id"],
+                "taskNumber": task_number,
+                "taskTitle": task["title"],
+                "projectTitle": project_name,
+            },
+        },
+    )
+
+
+# ─── delete_note ─────────────────────────────────────────────────────────────
+
+async def _execute_delete_note(args: dict, user_id: str) -> tuple[str, dict]:
+    note_title = args.get("note_title", "")
+    project_name = args.get("project_name", "")
+    if not note_title:
+        return "Note title is required to delete a note.", {}
+
+    note = await _resolve_note_id(user_id, note_title, project_name)
+    if not note:
+        return f"Note \"{note_title}\" not found in project '{project_name}'.", {}
+
+    return (
+        f"Note \"{note['title']}\" in project '{project_name}' is ready to be deleted. "
+        f"Please confirm the deletion using the confirmation prompt above.",
+        {
+            "sources": ["delete_note_staged"],
+            "scores": [],
+            "count": 1,
+            "requires_confirmation": True,
+            "confirm_data": {
+                "type": "delete_note",
+                "noteId": note["id"],
+                "noteTitle": note["title"],
+                "projectTitle": project_name,
+            },
+        },
+    )
+
+
+# ─── delete_project ───────────────────────────────────────────────────────────
+
+async def _execute_delete_project(args: dict, user_id: str) -> tuple[str, dict]:
+    project_name = args.get("project_name", "")
+    if not project_name:
+        return "Project name is required to delete a project.", {}
+
+    slug, resolved_title = await _resolve_project_slug(user_id, project_name)
+    if not slug:
+        return f"Project '{project_name}' not found.", {}
+
+    # Fetch cascade counts so the confirmation card can warn the user
+    from db import get_pool
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("""
+            SELECT
+                p.id,
+                COUNT(DISTINCT t.id) AS task_count,
+                COUNT(DISTINCT n.id) AS note_count
+            FROM "Project" p
+            LEFT JOIN "Task" t ON t."projectId" = p.id
+            LEFT JOIN "Note" n ON n."projectId" = p.id
+            WHERE p.slug = $1 AND p."ownerId" = $2
+            GROUP BY p.id
+        """, slug, user_id)
+
+    if not row:
+        return f"Project '{project_name}' not found.", {}
+
+    task_count = int(row["task_count"])
+    note_count = int(row["note_count"])
+
+    return (
+        f"Project \"{resolved_title}\" is ready to be deleted "
+        f"({task_count} task(s) and {note_count} note(s) will also be removed). "
+        f"Please confirm the deletion using the confirmation prompt above.",
+        {
+            "sources": ["delete_project_staged"],
+            "scores": [],
+            "count": 1,
+            "requires_confirmation": True,
+            "confirm_data": {
+                "type": "delete_project",
+                "projectId": row["id"],
+                "projectTitle": resolved_title,
+                "taskCount": task_count,
+                "noteCount": note_count,
+            },
+        },
     )

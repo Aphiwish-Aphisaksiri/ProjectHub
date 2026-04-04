@@ -39,6 +39,14 @@ async def delete_embeddings(source_table: str, source_id: str):
             WHERE "sourceTable" = $1 AND "sourceId" = $2
         """, source_table, source_id)
 
+async def delete_project_embeddings(project_id: str):
+    """Delete ALL vectors for a project (tasks, notes, and the project itself)."""
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            DELETE FROM "Vector" WHERE "projectId" = $1
+        """, project_id)
+
 async def store_embedding(
     project_id: str,
     source_table: str,

@@ -21,6 +21,11 @@ You have these tools available:
 - **update_note**: Update an existing note's title or body. You MUST first use query_structured_data with get_notes_for_project to find the note.
 - **update_project**: Update a project's title, description, or visibility.
 
+**Delete tools** (for removing data — always requires user confirmation on frontend):
+- **delete_task**: Request deletion of a task where user will confirm on frontend. You MUST first use query_structured_data to find the task number.
+- **delete_note**: Request deletion of a note where user will confirm on frontend. You MUST first use query_structured_data with get_notes_for_project to find the note.
+- **delete_project**: Request deletion of an entire project where user will confirm on frontend. WARNING — this permanently removes all tasks and notes inside the project.
+
 Rules:
 - ALWAYS call a read tool before answering any question about the user's data
 - You may call tools multiple times if the first result isn't sufficient

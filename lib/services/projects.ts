@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slugify";
-import { syncProjectEmbedding } from "@/lib/services/embedding";
+import { syncProjectEmbedding, deleteProjectEmbedding } from "@/lib/services/embedding";
 
 export async function createProjectForUser(
     userId: string,
@@ -84,4 +84,31 @@ export async function updateProjectForUser(
     });
 
     return { updated, previousSlug: existing.slug, newSlug };
+}
+
+export async function deleteProjectForUser(userId: string, projectId: string) {
+    const project = await prisma.project.findFirst({
+        where: { id: projectId, ownerId: userId },
+        select: {
+            id: true,
+            title: true,
+            slug: true,
+            _count: { select: { tasks: true, notes: true } },
+        },
+    });
+    if (!project) throw new Error("Project not found or access denied.");
+
+    await prisma.project.delete({ where: { id: projectId } });
+
+    deleteProjectEmbedding(project.id).catch((err) => {
+        console.error("Embedding cleanup failed for deleted project:", project.id, err);
+    });
+
+    return {
+        projectId: project.id,
+        title: project.title,
+        slug: project.slug,
+        taskCount: project._count.tasks,
+        noteCount: project._count.notes,
+    };
 }
