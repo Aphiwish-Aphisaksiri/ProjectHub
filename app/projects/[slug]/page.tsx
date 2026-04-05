@@ -90,7 +90,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                         </div>
 
                         {/* Right: action buttons */}
-                        <div className="flex flex-col gap-2 shrink-0">
+                        <div className="flex flex-col gap-2 shrink-0 items-center md:items-end">
                             <Link
                                 href={`/projects/${slug}/edit`}
                                 className="group flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-lightgrey hover:text-offwhite font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
