@@ -14,6 +14,7 @@ import ContentBox from "@/components/ContentBox";
 import { getCurrentUser } from "@/lib/auth";
 import { getTaskById } from "@/lib/tasks";
 import { TaskStatus, Priority } from "@/types";
+import DeleteTaskButton from "./_components/DeleteTaskButton";
 
 export const dynamic = "force-dynamic";
 
@@ -156,7 +157,7 @@ export default async function TaskDetailPage({
                             </div>
                         </div>
 
-                        <div className="flex shrink-0">
+                        <div className="flex flex-col shrink-0 gap-2">
                             <Link
                                 href={editHref}
                                 className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
@@ -164,6 +165,7 @@ export default async function TaskDetailPage({
                                 <FiEdit3 className="group-hover:rotate-10 transition-transform" />
                                 Edit Task
                             </Link>
+                            <DeleteTaskButton taskId={task.id} backHref={backHref} />
                         </div>
                     </div>
                 </div>

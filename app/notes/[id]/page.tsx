@@ -4,6 +4,7 @@ import { FiArrowLeft, FiClock, FiEdit3, FiFileText, FiFolder, FiUser } from 'rea
 import ContentBox from '@/components/ContentBox';
 import { getCurrentUser } from '@/lib/auth';
 import { getUserNoteById } from '@/lib/notes';
+import DeleteNoteButton from './_components/DeleteNoteButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,7 @@ export default async function NoteDetailPage({
                             </div>
                         </div>
 
-                        <div className="flex shrink-0">
+                        <div className="flex flex-col shrink-0 gap-2">
                             <Link
                                 href={`/notes/${note.id}/edit`}
                                 className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
@@ -61,6 +62,7 @@ export default async function NoteDetailPage({
                                 <FiEdit3 className="group-hover:rotate-10 transition-transform" />
                                 Edit Note
                             </Link>
+                            <DeleteNoteButton noteId={note.id} backHref={back ?? '/notes'} />
                         </div>
                     </div>
                 </div>

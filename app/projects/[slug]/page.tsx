@@ -2,7 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { FiPlus, FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder, FiEdit3 } from "react-icons/fi";
+import { FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder, FiEdit3 } from "react-icons/fi";
+import DeleteProjectButton from "./_components/DeleteProjectButton";
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
     HIGH:   { label: "High", color: "bg-red/10 text-red border-red/20" },
@@ -96,18 +97,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                             >
                                 <FiEdit3 className="group-hover:rotate-10 transition-transform" size={15} /> Edit Project
                             </Link>
-                            <Link
-                                href={`/projects/${slug}/tasks/new`}
-                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
-                            >
-                                <FiPlus className="group-hover:rotate-90 transition-transform" size={15} /> New Task
-                            </Link>
-                            <Link
-                                href={`/projects/${slug}/notes/new`}
-                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
-                            >
-                                <FiPlus className="group-hover:rotate-90 transition-transform" size={15} /> New Note
-                            </Link>
+                            <DeleteProjectButton projectId={project.id} />
                         </div>
                     </div>
                 </div>
