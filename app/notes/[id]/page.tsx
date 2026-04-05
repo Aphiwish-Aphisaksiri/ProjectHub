@@ -4,6 +4,7 @@ import { FiArrowLeft, FiClock, FiEdit3, FiFileText, FiFolder, FiUser } from 'rea
 import ContentBox from '@/components/ContentBox';
 import { getCurrentUser } from '@/lib/auth';
 import { getUserNoteById } from '@/lib/notes';
+import DeleteNoteButton from './_components/DeleteNoteButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ export default async function NoteDetailPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-4">
+                    <div className="flex flex-col md:flex-row items-center md:items-start justify-between w-full gap-4">
                         <div className="max-w-4xl">
                             <Link href={back ?? "/notes"} className="mb-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-tertiary transition-all hover:gap-4">
                                 <FiArrowLeft /> {back ? (back.endsWith("/notes") ? `Back to ${note.project.title} Notes` : "Back to Project Overview") : "Back to Notes"}
@@ -53,7 +54,7 @@ export default async function NoteDetailPage({
                             </div>
                         </div>
 
-                        <div className="flex shrink-0">
+                        <div className="flex flex-col shrink-0 gap-2 items-center md:items-end">
                             <Link
                                 href={`/notes/${note.id}/edit`}
                                 className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
@@ -61,6 +62,7 @@ export default async function NoteDetailPage({
                                 <FiEdit3 className="group-hover:rotate-10 transition-transform" />
                                 Edit Note
                             </Link>
+                            <DeleteNoteButton noteId={note.id} backHref={back ?? '/notes'} />
                         </div>
                     </div>
                 </div>

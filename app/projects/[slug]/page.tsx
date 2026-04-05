@@ -2,7 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { FiPlus, FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder, FiEdit3 } from "react-icons/fi";
+import { FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder, FiEdit3 } from "react-icons/fi";
+import DeleteProjectButton from "./_components/DeleteProjectButton";
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
     HIGH:   { label: "High", color: "bg-red/10 text-red border-red/20" },
@@ -56,7 +57,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 </div>
 
                 <div className="max-w-7xl mx-auto px-6 h-full flex items-end pb-8 relative z-10 pt-6">
-                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
+                    <div className="flex flex-col md:flex-row items-center md:items-start justify-between w-full gap-8">
                         {/* Left: icon + title + meta */}
                         <div className="text-center md:text-left">
                             <h1 className="text-3xl 2xl:text-5xl font-black tracking-tighter text-offwhite flex items-center gap-4 justify-center md:justify-start">
@@ -89,25 +90,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                         </div>
 
                         {/* Right: action buttons */}
-                        <div className="flex flex-col gap-2 shrink-0">
+                        <div className="flex flex-col gap-2 shrink-0 items-center md:items-end">
                             <Link
                                 href={`/projects/${slug}/edit`}
                                 className="group flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-lightgrey hover:text-offwhite font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
                             >
                                 <FiEdit3 className="group-hover:rotate-10 transition-transform" size={15} /> Edit Project
                             </Link>
-                            <Link
-                                href={`/projects/${slug}/tasks/new`}
-                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
-                            >
-                                <FiPlus className="group-hover:rotate-90 transition-transform" size={15} /> New Task
-                            </Link>
-                            <Link
-                                href={`/projects/${slug}/notes/new`}
-                                className="group flex items-center gap-2 px-6 py-3 bg-secondary-400/10 hover:bg-secondary-400/20 border border-secondary-400/20 text-secondary-400 font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 shadow-xl shadow-black/20"
-                            >
-                                <FiPlus className="group-hover:rotate-90 transition-transform" size={15} /> New Note
-                            </Link>
+                            <DeleteProjectButton projectId={project.id} />
                         </div>
                     </div>
                 </div>
