@@ -57,7 +57,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 </div>
 
                 <div className="max-w-7xl mx-auto px-6 h-full flex items-end pb-8 relative z-10 pt-6">
-                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-8">
+                    <div className="flex flex-col md:flex-row items-center md:items-start justify-between w-full gap-8">
                         {/* Left: icon + title + meta */}
                         <div className="text-center md:text-left">
                             <h1 className="text-3xl 2xl:text-5xl font-black tracking-tighter text-offwhite flex items-center gap-4 justify-center md:justify-start">

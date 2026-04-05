@@ -108,7 +108,7 @@ export default async function TaskDetailPage({
                 </div>
 
                 <div className="relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6">
-                    <div className="flex flex-col md:flex-row items-center md:items-end justify-between w-full gap-4">
+                    <div className="flex flex-col md:flex-row items-center md:items-start justify-between w-full gap-4">
                         <div className="max-w-4xl">
                             <Link
                                 href={backHref}

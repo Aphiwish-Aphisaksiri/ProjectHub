@@ -39,22 +39,26 @@ export default function DeleteTaskButton({
 
     if (confirming) {
         return (
-            <div className="flex items-center gap-2">
-                <button
-                    onClick={() => setConfirming(false)}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-lightgrey hover:text-offwhite font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                    <FiX size={14} /> Cancel
-                </button>
-                <button
-                    onClick={handleConfirm}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-4 py-3 bg-red/20 hover:bg-red/30 border border-red/30 text-red font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-                >
-                    <FiTrash2 size={14} />
-                    {loading ? "Deleting…" : "Confirm Delete"}
-                </button>
+            <div className="flex flex-col items-center">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setConfirming(false)}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-lightgrey hover:text-offwhite font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                        <FiX size={14} /> Cancel
+                    </button>
+                    <button
+                        onClick={handleConfirm}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-3 bg-red/20 hover:bg-red/30 border border-red/30 text-red font-black rounded-2xl text-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                        <FiTrash2 size={14} />
+                        {loading ? "Deleting…" : "Confirm Delete"}
+                    </button>
+                </div>
+                {/* Extra warning for deleting a task */}
+                <p className="text-red text-sm font-bold mt-2">This action cannot be undone.</p>
             </div>
         );
     }
