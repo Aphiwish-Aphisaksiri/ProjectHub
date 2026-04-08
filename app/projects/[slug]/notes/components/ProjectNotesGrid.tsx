@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FiFileText, FiUser, FiClock, FiSearch } from "react-icons/fi";
 import { useState } from "react";
+import MarkdownPreview from "@/components/MarkdownPreview";
 
 interface ProjectNote {
     id: string;
@@ -75,9 +76,7 @@ export default function ProjectNotesGrid({
 
                             {/* Body preview */}
                             <div className="flex-1">
-                                <p className="text-lightgrey font-medium leading-relaxed mb-8 line-clamp-4 group-hover:text-offwhite transition-colors">
-                                    {note.body}
-                                </p>
+                                <MarkdownPreview body={note.body} />
                             </div>
 
                             {/* Footer */}
