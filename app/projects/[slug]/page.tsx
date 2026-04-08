@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { FiCheckSquare, FiFileText, FiLock, FiGlobe, FiCalendar, FiArrowRight, FiFolder, FiEdit3 } from "react-icons/fi";
 import DeleteProjectButton from "./_components/DeleteProjectButton";
+import MarkdownPreview from "@/components/MarkdownPreview";
 
 const priorityConfig: Record<string, { label: string; color: string }> = {
     HIGH:   { label: "High", color: "bg-red/10 text-red border-red/20" },
@@ -201,7 +202,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                                 >
                                     <p className="text-offwhite text-sm font-bold truncate">{note.title}</p>
                                     {note.body && (
-                                        <p className="text-lightgrey text-xs mt-1 line-clamp-2 leading-relaxed">{note.body}</p>
+                                        <div className="mt-1">
+                                            <MarkdownPreview body={note.body} compact />
+                                        </div>
                                     )}
                                     <p className="text-lightgrey/50 text-xs mt-2">
                                         {new Date(note.createdAt).toLocaleDateString("en-US", {
