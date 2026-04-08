@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FiFileText, FiFolder, FiUser, FiClock, FiSearch } from "react-icons/fi";
 import { useState } from "react";
+import MarkdownPreview from "@/components/MarkdownPreview";
 
 interface Note {
     id: string;
@@ -48,8 +49,7 @@ export default function NotesGrid({ initialNotes }: { initialNotes: Note[] }) {
                         href={`/notes/${note.id}`}
                         className={`group relative bg-secondary/20 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 hover:border-tertiary/20 hover:bg-secondary/40 transition-all duration-500 shadow-xl hover:shadow-tertiary/5 flex flex-col h-full
                         focus:outline-none focus:ring-2 focus:ring-tertiary/30
-                        ${index % 5 === 0 ? 'md:col-span-2' : ''}
-                        ${index % 7 === 0 ? 'lg:row-span-2' : ''}`}
+                        ${index % 5 === 0 ? 'md:col-span-2' : ''}`}
                     >
                         {/* Decorative Gradient overlay */}
                         <div className="absolute top-0 right-0 w-32 h-32 bg-tertiary/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -65,9 +65,7 @@ export default function NotesGrid({ initialNotes }: { initialNotes: Note[] }) {
                         </div>
 
                         <div className="flex-1">
-                            <p className="text-lightgrey font-medium leading-relaxed mb-8 line-clamp-4 group-hover:text-offwhite transition-colors">
-                                {note.body}
-                            </p>
+                            <MarkdownPreview body={note.body} />
                         </div>
 
                         <div className="space-y-4 mt-auto pt-6 border-t border-white/5">
