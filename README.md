@@ -67,7 +67,18 @@ A Next.js-based project management web app with an integrated AI assistant power
 
 ### 2. Setting up the `.env` file
 
-Create a `.env` file in your project root with the following variables:
+Create a `.env` file in your project root with the following variables (This is used for Cloudflare production build):
+
+    DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_DB>
+    NEXTAUTH_SECRET=<your-secret>
+    NEXTAUTH_URL=<your domain name>
+    POSTGRES_USER=<POSTGRES_USER>
+    POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
+    POSTGRES_DB=<POSTGRES_DB>
+    BACKEND_URL=http://backend:8000
+    INTERNAL_API_SECRET=<your-secret>
+
+Create a `.env.dev` file in your project root with the following variables (This is used for development environment):
 
     DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@db:5432/<POSTGRES_DB>
     NEXTAUTH_SECRET=<your-secret>
@@ -78,7 +89,7 @@ Create a `.env` file in your project root with the following variables:
     BACKEND_URL=http://backend:8000
     INTERNAL_API_SECRET=<your-secret>
 
-Create a `.env.local` file in your project root with the following variables:
+Create a `.env.local` file in your project root with the following variables (This is used for database migration):
 
     DATABASE_URL=postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@localhost:5432/<POSTGRES_DB>
     NEXTAUTH_SECRET=<your-secret>
@@ -255,6 +266,156 @@ You can connect to the database directly with pgAdmin using:
 - User: (as set in your `.env`, e.g. `postgres`)
 - Password: (as set in your `.env`)
 - Database: (as set in your `.env`, e.g. `projecthub`)
+
+---
+
+## Cloudflare Tunnel Deployment (Windows)
+
+Cloudflare Tunnel lets you expose this locally-running Docker app at a public HTTPS URL without opening ports or configuring a router. Cloudflare handles SSL automatically.
+
+> **Note:** This is optional. The app runs fine locally without any of these steps.
+
+### Step 1 — Add your domain to Cloudflare
+
+> **If you registered your domain directly through Cloudflare, skip this step — DNS is already configured.**
+
+If you bought your domain from an external registrar (e.g. Namecheap):
+
+1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → Add a site → enter your domain
+2. Choose the **Free plan**
+3. Cloudflare will give you two nameservers (e.g. `aria.ns.cloudflare.com`)
+4. Go to your registrar and replace the existing nameservers with those two
+5. Wait 5–30 minutes for propagation
+
+---
+
+### Step 2 — Install `cloudflared` on Windows
+
+Download and run the Windows installer:
+
+```
+https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.msi
+```
+
+Then verify in CMD:
+
+```cmd
+cloudflared --version
+```
+
+---
+
+### Step 3 — Authenticate with Cloudflare
+
+```cmd
+cloudflared tunnel login
+```
+
+This opens your browser — select your domain. A credentials file is saved to:
+
+```
+C:\Users\yourname\.cloudflared\cert.pem
+```
+
+---
+
+### Step 4 — Create the tunnel
+
+```cmd
+cloudflared tunnel create projecthub
+```
+
+You'll see output like:
+
+```
+Created tunnel projecthub with id abc123-def456-...
+```
+
+Save that UUID — you'll need it in the next step.
+
+---
+
+### Step 5 — Create the config file
+
+Navigate to the cloudflared folder:
+
+```cmd
+cd C:\Users\yourname\.cloudflared
+```
+
+Open a new config file in Notepad:
+
+```cmd
+notepad config.yml
+```
+
+Paste the following, replacing `YOUR-TUNNEL-UUID` with the UUID from Step 4 and `yourdomain.com` with your actual domain:
+
+```yaml
+tunnel: YOUR-TUNNEL-UUID
+credentials-file: C:\Users\yourname\.cloudflared\YOUR-TUNNEL-UUID.json
+
+ingress:
+  - hostname: projecthub.yourdomain.com
+    service: http://localhost:3000
+  - service: http_status:404
+```
+
+Save and close Notepad.
+
+---
+
+### Step 6 — Create the DNS record
+
+```cmd
+cloudflared tunnel route dns projecthub projecthub.yourdomain.com
+```
+
+This automatically creates a CNAME record in your Cloudflare DNS — no need to touch the dashboard.
+
+---
+
+### Step 7 — Update your `.env`
+
+Set `NEXTAUTH_URL` to your public domain:
+
+```env
+NEXTAUTH_URL="https://projecthub.yourdomain.com"
+```
+
+Then restart your Docker containers:
+
+```cmd
+docker compose down
+docker compose up -d
+```
+
+---
+
+### Step 8 — Run the tunnel
+
+```cmd
+cloudflared tunnel run projecthub
+```
+
+Your app is now live at `https://projecthub.yourdomain.com`.
+
+---
+
+### Keeping it running
+
+By default, `cloudflared tunnel run projecthub` keeps the tunnel alive only while that CMD window is open. Three options:
+
+**Option A — Leave the CMD window open** (simplest, good for testing)
+
+**Option B — Run as a Windows service** so it survives reboots. Run CMD as Administrator:
+
+```cmd
+cloudflared service install
+sc start cloudflared
+```
+
+**Option C — On-demand** — run Step 8 when you want the app accessible, close the window when done. Best for a personal project that doesn't need 24/7 uptime.
 
 ---
 
