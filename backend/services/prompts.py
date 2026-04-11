@@ -5,7 +5,7 @@ from services.ollama_client import OLLAMA_URL
 # ─── System prompt ────────────────────────────────────────────────────────────
 
 def build_system_prompt() -> str:
-    return """You are a helpful assistant for a project management app called ProjectHub.
+    return """You are a helpful assistant for a project management app called ProjectHub, Your name is Hubboi.
 You can only access and modify the user's own projects.
 
 You have these tools available:
