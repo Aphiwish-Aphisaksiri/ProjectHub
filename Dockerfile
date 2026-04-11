@@ -47,6 +47,9 @@ RUN npm install
 # Copy all other files
 COPY . .
 
+# Remove sandbox (dev-only routes) before production build
+RUN rm -rf app/sandbox
+
 # Build Next.js app
 RUN rm -rf .next && npm run build
 
