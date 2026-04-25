@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: 'ProjectHub',
   description: 'Your developer workspace',
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

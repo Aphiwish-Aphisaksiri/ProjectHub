@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -48,10 +49,7 @@ export default function Navbar() {
             {/* Left: Brand + Nav */}
             <div className="flex items-center gap-6">
                 <Link href="/" className="flex text-black items-center gap-3 text-lg font-semibold">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M3 12h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M12 3v18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Image src="/logo.svg" alt="ProjectHub logo" width={28} height={28} priority />
                 ProjectHub
                 </Link>
 
