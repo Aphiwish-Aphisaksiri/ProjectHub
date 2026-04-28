@@ -152,7 +152,7 @@ export default function UserSignUpPage(){
 
                 {/* Need help? */}
                 <div className="flex flex-row items-center justify-end w-full">
-                    <Link href="#" className="text-[16px] text-tertiary font-semibold hover:underline">
+                    <Link href="/help" className="text-[16px] text-tertiary font-semibold hover:underline">
                         Need help signing up?
                     </Link>
                 </div>

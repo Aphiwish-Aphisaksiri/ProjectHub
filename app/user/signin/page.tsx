@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, startTransition } from "react";
+import { useState, useEffect, useRef, startTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 export default function UserSigninPage() {
+    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
+    const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         // Clear previous result when email or password changes
@@ -16,6 +19,11 @@ export default function UserSigninPage() {
             startTransition(() => setResult(null));
         }
     }, [email, password]);
+
+    // Clean up redirect timer on unmount
+    useEffect(() => {
+        return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); };
+    }, []);
 
     const validateEmail = (v: string) => /\S+@\S+\.\S+/.test(v); // Simple email validation regex
 
@@ -48,10 +56,9 @@ export default function UserSigninPage() {
             setResult({ type: "error", message: res.error });
         }
         else {
-            setResult({ type: "success", message: "Signed in successfully!" });
+            setResult({ type: "success", message: "Signed in! Redirecting to your projects..." });
             window.dispatchEvent(new Event("userSessionChanged"));
-            // Optionally, you can redirect the user after successful sign-in
-            // For example: router.push("/dashboard");
+            redirectTimerRef.current = setTimeout(() => router.push("/projects"), 1500);
         }
     }
 
@@ -99,7 +106,7 @@ export default function UserSigninPage() {
 
                 {/* Need help? */}
                 <div className="flex flex-row items-center justify-end w-full">
-                    <Link href="#" className="text-[16px] text-tertiary font-semibold hover:underline">
+                    <Link href="/help" className="text-[16px] text-tertiary font-semibold hover:underline">
                         Need help signing in?
                     </Link>
                 </div>
@@ -116,16 +123,14 @@ export default function UserSigninPage() {
                 </div>
 
                 {/* Register (Don't have an account) */}
-                {!result && (
-                    <div className="flex flex-row items-center justify-center w-full gap-1">
-                        <p className="text-[16px] text-lightgrey font-semibold">
-                            {"Don't have an account?"}
-                        </p>
-                        <Link href="/user/signup" className="text-tertiary font-semibold hover:underline">
-                            Register here
-                        </Link>
-                    </div>
-                )}
+                <div className="flex flex-row items-center justify-center w-full gap-1">
+                    <p className="text-[16px] text-lightgrey font-semibold">
+                        {"Don't have an account?"}
+                    </p>
+                    <Link href="/user/signup" className="text-tertiary font-semibold hover:underline">
+                        Register here
+                    </Link>
+                </div>
 
                 {/* Result message */}
                 {result && (
