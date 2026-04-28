@@ -24,13 +24,25 @@ export const authOptions: AuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials): Promise<{ id: string; email: string; name: string } | null> {
-                if (!credentials?.email || !credentials.password) return null;
-                const user = await prisma.user.findUnique({ where: { email: credentials.email } }) as ExtendedUser | null;
-                if (!user || !user.hashedPassword) return null;
+                if (!credentials?.email || !credentials.password) {
+                    throw new Error("Please provide your email and password.");
+                }
+                let user: ExtendedUser | null;
+                try {
+                    user = await prisma.user.findUnique({ where: { email: credentials.email } }) as ExtendedUser | null;
+                } catch {
+                    throw new Error("Unable to connect to the database. Please try again later.");
+                }
+                if (!user || !user.hashedPassword) {
+                    throw new Error("Invalid email or password.");
+                }
                 const valid = await bcrypt.compare(credentials.password, user.hashedPassword);
-                if (!valid) return null;
-                // Ensure all fields are present
-                if (!user.id || !user.email || !user.name) return null;
+                if (!valid) {
+                    throw new Error("Invalid email or password.");
+                }
+                if (!user.id || !user.email || !user.name) {
+                    throw new Error("Account data is incomplete. Please contact support.");
+                }
                 return { id: user.id, email: user.email, name: user.name };
             }
         }),
