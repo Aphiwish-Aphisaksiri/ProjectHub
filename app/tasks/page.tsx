@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { FiCheckSquare, FiPlus } from "react-icons/fi";
 import { getCurrentUser } from "@/lib/auth";
 import { getAllUserTasks } from "./action";
@@ -11,9 +10,8 @@ export const dynamic = "force-dynamic";
 
 export default async function TasksPage() {
     const user = await getCurrentUser();
-    if (!user) redirect("/user/signin");
 
-    const rawTasks = await getAllUserTasks();
+    const rawTasks = user ? await getAllUserTasks() : [];
     const tasks: KanbanTask[] = rawTasks.map((t) => ({
         ...t,
         status: t.status as TaskStatus,
@@ -74,7 +72,18 @@ export default async function TasksPage() {
 
             {/* Kanban Board */}
             <div className="relative z-20 mx-auto mt-10 max-w-7xl px-6">
-                {tasks.length > 0 ? (
+                {!user ? (
+                    <div className="bg-secondary/20 backdrop-blur-md p-10 rounded-4xl border border-white/10 max-w-2xl mx-auto text-center mt-10">
+                        <div className="bg-red/20 text-red-400 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red/10 border border-red/30">
+                            <FiCheckSquare size={40} />
+                        </div>
+                        <h2 className="text-3xl font-bold text-offwhite mb-3 tracking-tight">Access Restricted</h2>
+                        <p className="text-lightgrey mb-8 text-lg">You must be signed in to access and manage your tasks.</p>
+                        <Link href="/user/signin" className="inline-block px-8 py-4 bg-tertiary hover:opacity-90 text-offblack font-bold rounded-2xl transition-all shadow-lg shadow-tertiary/20">
+                            Sign In Now
+                        </Link>
+                    </div>
+                ) : tasks.length > 0 ? (
                     <KanbanBoard initialTasks={tasks} showProject />
                 ) : (
                     <div className="py-20 text-center">

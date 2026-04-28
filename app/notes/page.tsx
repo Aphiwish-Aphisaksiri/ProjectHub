@@ -59,7 +59,7 @@ export default async function NotesPage() {
                             <FiFileText size={40} />
                         </div>
                         <h2 className="text-3xl font-bold text-offwhite mb-3 tracking-tight">Access Restricted</h2>
-                        <p className="text-lightgrey mb-8 text-lg">You must be signed in to access the Knowledge Hub and manage your project notes.</p>
+                        <p className="text-lightgrey mb-8 text-lg">You must be signed in to access and manage your project notes.</p>
                         <Link href="/user/signin" className="inline-block px-8 py-4 bg-tertiary hover:opacity-90 text-offblack font-bold rounded-2xl transition-all shadow-lg shadow-tertiary/20">
                             Sign In Now
                         </Link>

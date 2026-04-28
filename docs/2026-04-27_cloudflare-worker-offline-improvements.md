@@ -77,8 +77,8 @@ Then in the main `fetch` handler, check health first before forwarding the real 
 1. [x] Create `app/api/health/route.ts` in Next.js
 2. [x] Update Cloudflare Worker to use `isOriginAlive()` health check
 3. [x] Update Cloudflare Worker to proxy offline page content (503) instead of 302 redirect
-4. [ ] Test: with app running — verify normal flow works
-5. [ ] Test: with app stopped — verify offline page shows at `projecthub.aphiwish.com` with no URL change
+4. [x] Test: with app running — verify normal flow works
+5. [x] Test: with app stopped — verify offline page shows at `projecthub.aphiwish.com` with no URL change
 
 ---
 

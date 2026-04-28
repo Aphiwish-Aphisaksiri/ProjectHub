@@ -63,8 +63,19 @@ export default async function ProjectsPage() {
             {/* ── Main Content ── */}
             <div className="max-w-7xl mx-auto px-6 mt-6 relative z-20">
 
-            {/* Empty state */}
-            {projects.length === 0 ? (
+            {/* Access Restricted */}
+            {!user ? (
+                <div className="bg-secondary/20 backdrop-blur-md p-10 rounded-4xl border border-white/10 max-w-2xl mx-auto text-center mt-20">
+                    <div className="bg-red/20 text-red-400 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red/10 border border-red/30">
+                        <FiFolder size={40} />
+                    </div>
+                    <h2 className="text-3xl font-bold text-offwhite mb-3 tracking-tight">Access Restricted</h2>
+                    <p className="text-lightgrey mb-8 text-lg">You must be signed in to access and manage your projects.</p>
+                    <Link href="/user/signin" className="inline-block px-8 py-4 bg-tertiary hover:opacity-90 text-offblack font-bold rounded-2xl transition-all shadow-lg shadow-tertiary/20">
+                        Sign In Now
+                    </Link>
+                </div>
+            ) : projects.length === 0 ? (
                 <div className="flex flex-col items-center justify-center mt-24 gap-6">
                     <div className="bg-tertiary/10 border border-tertiary/20 w-20 h-20 rounded-3xl flex items-center justify-center">
                         <FiFolder size={36} className="text-tertiary" />
