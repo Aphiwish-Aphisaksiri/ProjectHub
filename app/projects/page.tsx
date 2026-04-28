@@ -34,7 +34,7 @@ export default async function ProjectsPage() {
                         <div className="text-center md:text-left">
                             <h1 className="text-6xl font-black tracking-tighter text-offwhite flex items-center gap-4 justify-center md:justify-start">
                                 <span className="p-3 bg-tertiary/20 rounded-3xl border border-tertiary/30">
-                                    <FiFolder className="text-tertiary" size={40} />
+                                    <FiFolder className="text-tertiary" size={38} />
                                 </span>
                                 Projects
                             </h1>
