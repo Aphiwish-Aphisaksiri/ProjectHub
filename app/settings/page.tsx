@@ -14,7 +14,7 @@ export default function SettingsPage() {
     return (
         <div className="flex h-full bg-primary text-offwhite">
             {/* Sidebar */}
-            <aside className="w-56 shrink-0 border-r border-white/10 bg-secondary/30 flex flex-col gap-1 p-3">
+            <aside className="w-56 shrink-0 border-r border-white/10 bg-white/3 backdrop-blur-xl flex flex-col gap-1 p-3">
                 <p className="text-xs text-lightgrey/40 font-bold uppercase tracking-widest px-2 mb-1 mt-2">
                     Settings
                 </p>

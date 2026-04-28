@@ -37,7 +37,7 @@ Ship a polished placeholder that mirrors the two-panel Cloudflare Settings layou
 └─────────────────────────────────────────────────────────┘
 ```
 
-- Sidebar: `bg-secondary/30` with `border-r border-white/10`, item labels in `text-lightgrey`, active item highlighted with `text-offwhite bg-white/5`
+- Sidebar: `bg-white/3 backdrop-blur-xl` with `border-r border-white/10` — matches `AppSidebar` exactly; item labels in `text-lightgrey`, active item highlighted with `border-l-2 border-tertiary bg-tertiary/10 text-tertiary`
 - All sidebar items are visual-only (no routing yet) — first item is "active" by default
 - Main area: centred card with an icon, heading, and one-liner; same glassmorphism style used on Help page
 
