@@ -32,15 +32,21 @@ This shows raw codes like `"CredentialsSignin"` or `"Configuration"` to the user
 | Thrown error message | If `authorize()` throws an `Error`, NextAuth sets `res.error` to that error's `.message` |
 | `null` / `undefined` | Sign-in succeeded (`res.ok === true`) |
 
+### Edge Case: Database Unavailable
+
+When the database container is stopped, Prisma throws a raw connection error (e.g. `getaddrinfo EAI_AGAIN db`) directly inside `authorize()`. Because the error originates from Prisma — not from an intentional `throw new Error(...)` — NextAuth forwards the full raw Prisma stack trace as `res.error`. The result shown to the user is an unreadable internal error string.
+
+This is a separate failure mode from `"Configuration"` and must be caught explicitly inside `authorize()` by wrapping the Prisma call in a `try/catch`.
+
 > **Security note:** Never distinguish "email not found" from "wrong password" in error messages — this enables user enumeration attacks.
 
 ---
 
 ## Implementation Plan
 
-### Step 1 — Throw typed errors in `authorize()` (`lib/auth.ts`)
+### Step 1a — Throw typed errors in `authorize()` (`lib/auth.ts`)
 
-Replace `return null` with `throw new Error(...)` for each failure case. This causes NextAuth to forward the message directly into `res.error`.
+Replace `return null` with `throw new Error(...)` for each intentional failure case. This causes NextAuth to forward the message directly into `res.error`.
 
 ```ts
 async authorize(credentials): Promise<{ id: string; email: string; name: string } | null> {
@@ -71,6 +77,47 @@ async authorize(credentials): Promise<{ id: string; email: string; name: string 
 
 **Why same message for "user not found" and "wrong password"?**  
 Giving different messages for each case lets an attacker probe which emails are registered (user enumeration). A single generic message prevents this.
+
+---
+
+### Step 1b — Wrap the Prisma call to catch database errors (`lib/auth.ts`)
+
+Wrap the `prisma.user.findUnique()` call (and the `bcrypt.compare`) in a `try/catch`. Any Prisma connection error (e.g. `EAI_AGAIN`, `ECONNREFUSED`, `P1001`) will be caught and replaced with a safe human-readable message before NextAuth ever sees it.
+
+```ts
+async authorize(credentials): Promise<{ id: string; email: string; name: string } | null> {
+    if (!credentials?.email || !credentials.password) {
+        throw new Error("Please provide your email and password.");
+    }
+
+    let user: ExtendedUser | null;
+    try {
+        user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+        }) as ExtendedUser | null;
+    } catch {
+        throw new Error("Unable to connect to the database. Please try again later.");
+    }
+
+    if (!user || !user.hashedPassword) {
+        throw new Error("Invalid email or password.");
+    }
+
+    const valid = await bcrypt.compare(credentials.password, user.hashedPassword);
+    if (!valid) {
+        throw new Error("Invalid email or password.");
+    }
+
+    if (!user.id || !user.email || !user.name) {
+        throw new Error("Account data is incomplete. Please contact support.");
+    }
+
+    return { id: user.id, email: user.email, name: user.name };
+}
+```
+
+**Why catch broadly here?**  
+Prisma throws many different error types for connection issues (`PrismaClientInitializationError`, `PrismaClientKnownRequestError`, generic `Error`). Catching all of them and re-throwing a single clean message is simpler and safer than enumerating Prisma error codes.
 
 ---
 
@@ -141,10 +188,19 @@ Server misconfiguration
     → Frontend errorMap lookup: match found
     → User sees: "A server error occurred. Please try again later."
 
-Network failure
+Network failure (browser → Next.js)
     → res is null
     → null guard triggers
     → User sees: "Could not reach the server. Check your connection."
+
+Database unavailable (Next.js → DB)
+    → prisma.user.findUnique() throws a Prisma connection error
+    → try/catch in authorize() catches it
+    → authorize() throws new Error("Unable to connect to the database. Please try again later.")
+    → NextAuth sets res.error = "Unable to connect to the database. Please try again later."
+    → Frontend errorMap lookup: no match (it's already human-readable)
+    → res.error is used as-is
+    → User sees: "Unable to connect to the database. Please try again later."
 ```
 
 ---
@@ -153,5 +209,5 @@ Network failure
 
 | File | Change |
 |---|---|
-| `lib/auth.ts` | Replace `return null` with `throw new Error(...)` in `authorize()` |
+| `lib/auth.ts` | Replace `return null` with `throw new Error(...)` in `authorize()`; wrap Prisma call in `try/catch` |
 | `app/user/signin/page.tsx` | Add null guard on `res`, replace raw `res.error` with mapped message |

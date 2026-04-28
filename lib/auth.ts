@@ -27,7 +27,12 @@ export const authOptions: AuthOptions = {
                 if (!credentials?.email || !credentials.password) {
                     throw new Error("Please provide your email and password.");
                 }
-                const user = await prisma.user.findUnique({ where: { email: credentials.email } }) as ExtendedUser | null;
+                let user: ExtendedUser | null;
+                try {
+                    user = await prisma.user.findUnique({ where: { email: credentials.email } }) as ExtendedUser | null;
+                } catch {
+                    throw new Error("Unable to connect to the database. Please try again later.");
+                }
                 if (!user || !user.hashedPassword) {
                     throw new Error("Invalid email or password.");
                 }
