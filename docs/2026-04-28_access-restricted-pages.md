@@ -45,6 +45,45 @@ max-w-2xl mx-auto text-center mt-20
   - Prevents a server-side fetch for unauthenticated requests.
 - Added `!user` branch in the content section rendering the Access Restricted card (`FiCheckSquare` icon) before the existing Kanban / empty-state branches.
 
+---
+
+## Follow-up: Tasks Hero & Spacing Normalization (2026-04-28)
+
+### Problem
+
+After the initial implementation, the Tasks page hero and content spacing differed from Notes and Projects in 4 ways:
+
+| Issue | Tasks (before) | Notes / Projects (reference) |
+|---|---|---|
+| Hero inner container | `flex flex-col justify-end gap-8 pb-10` | `h-full flex items-end pb-8` |
+| Title structure | Icon + `<h1>` wrapped in two extra `flex` divs | Icon `<span>` directly inside `<h1>` |
+| `<h1>` font size | `text-4xl md:text-6xl` (responsive) | `text-6xl` (flat) |
+| Content container margin | `mt-10` | `mt-6` |
+| Access Restricted card margin | `mt-10` | `mt-20` |
+
+### Changes Made (`app/tasks/page.tsx`)
+
+1. **Hero inner container** — replaced `relative z-10 mx-auto flex max-w-7xl flex-col justify-end gap-8 px-6 pb-10 pt-6` with `max-w-7xl mx-auto px-6 h-full flex items-end pb-8 relative z-10 pt-6`
+2. **Title structure** — removed the outer `flex flex-col` wrapper div and inner `flex flex-row` wrapper div; moved `flex items-center gap-4 justify-center md:justify-start` directly onto `<h1>`; set font size to flat `text-6xl`; `<span>` icon is now a direct child of `<h1>`
+3. **Content container margin** — `mt-10` → `mt-6`
+4. **Access Restricted card margin** — `mt-10` → `mt-20`
+
+---
+
+---
+
+## Follow-up: Projects Hero Icon Size (2026-04-28)
+
+### Problem
+
+The `FiFolder` icon in the Projects page hero was `size={40}`, while Notes (`FiFileText`) and Tasks (`FiCheckSquare`) both used `size={38}`, making the Projects icon visually larger.
+
+### Change Made (`app/projects/page.tsx`)
+
+- `<FiFolder className="text-tertiary" size={40} />` → `size={38}`
+
+---
+
 ## Auth Pattern
 
 All three pages now follow the same pattern:
