@@ -1,13 +1,8 @@
 import ChatBox from "./components/chatBox";
 import { getCurrentUser } from "@/lib/auth";
-import { redirect } from "next/navigation";
 
 export default async function Home() {
   const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/user/signin");
-  }
 
   return (
     <div className="relative bg-primary text-offwhite flex flex-col items-center h-full max-h-full overflow-hidden">
@@ -24,7 +19,7 @@ export default async function Home() {
             AI Assistant
           </span>
           <h1 className="text-3xl font-black tracking-tighter text-offwhite">
-            Hi, {user.name}
+            Hi, {user?.name ?? "there"}
           </h1>
           <p className="text-sm text-lightgrey font-medium mt-1">Ask me anything about your projects</p>
         </div>
@@ -32,7 +27,7 @@ export default async function Home() {
 
       {/* ChatBox */}
       <div className="relative z-10 w-full max-w-3xl flex-1 min-h-0">
-        <ChatBox userId={user.id} />
+        <ChatBox userId={user?.id ?? null} />
       </div>
     </div>
   );

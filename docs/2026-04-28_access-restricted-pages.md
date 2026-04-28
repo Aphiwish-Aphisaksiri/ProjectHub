@@ -84,6 +84,38 @@ The `FiFolder` icon in the Projects page hero was `size={40}`, while Notes (`FiF
 
 ---
 
+---
+
+## Follow-up: Chat Page Access Restricted (2026-04-28)
+
+### Problem
+
+`/chat` used a hard `redirect("/user/signin")` (same pattern as Tasks before the fix). The page header ("Hi, {user.name}") and the decorative background were invisible to unauthenticated users.
+
+### Plan
+
+Instead of a server-side redirect, make `userId` nullable and handle the unauthenticated state entirely inside `ChatBox`. The page header stays visible with a fallback greeting, and the Access Restricted card replaces the guide placeholder in the message area. The input bar remains rendered but is disabled.
+
+### Changes Made
+
+**`app/chat/page.tsx`**
+- Removed `import { redirect }` and the `if (!user) redirect(...)` block
+- `{user.name}` → `{user?.name ?? "there"}` (safe fallback for unauthenticated render)
+- `userId={user.id}` → `userId={user?.id ?? null}`
+
+**`app/chat/components/chatBox.tsx`**
+- Prop type: `userId: string` → `userId: string | null`
+- `handleSend` early-return guard: added `|| !userId`
+- Placeholder section: added `!userId` branch that renders the Access Restricted card (✦ star icon in red ring, "Access Restricted" heading, "You must be signed in to use the AI assistant.", "Sign In Now" `<a>` to `/user/signin`); existing guide placeholder (icon + intro + chips) only renders when `userId` is truthy
+- Textarea: `disabled={loading}` → `disabled={loading || !userId}`; placeholder text shows "Sign in to chat..." when unauthenticated
+- Send button: `disabled={loading || !input.trim()}` → `disabled={loading || !input.trim() || !userId}`
+
+### Icon
+
+Used the ✦ four-pointed star (already present in the component as the Hubboi brand symbol) for the Access Restricted card icon — consistent with the chat page's existing visual identity, and avoids a new import.
+
+---
+
 ## Auth Pattern
 
 All three pages now follow the same pattern:

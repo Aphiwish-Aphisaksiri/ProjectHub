@@ -235,7 +235,7 @@ function ModelBadge({ modelName }: { modelName: string }) {
     )
 }
 
-export default function ChatBox({ userId }: { userId: string }) {
+export default function ChatBox({ userId }: { userId: string | null }) {
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState("")
     const [loading, setLoading] = useState(false)
@@ -284,7 +284,7 @@ export default function ChatBox({ userId }: { userId: string }) {
     }, [])
 
     async function handleSend() {
-        if (!input.trim() || loading) return
+        if (!input.trim() || loading || !userId) return
 
         abortControllerRef.current?.abort()
         const controller = new AbortController()
@@ -449,32 +449,50 @@ export default function ChatBox({ userId }: { userId: string }) {
             <div className="messageArea flex-1 overflow-y-auto space-y-3 px-6 pb-6 flex flex-col">
                 {messages.length === 0 && (
                     <div className="guidePlaceholder flex flex-col flex-1 items-center justify-center gap-5 text-center px-4">
-                        {/* Icon */}
-                        <div className="w-16 h-16 rounded-2xl bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
-                            <span className="text-2xl">✦</span>
-                        </div>
-                        {/* Intro message */}
-                        <p className="text-offwhite font-medium text-sm max-w-md leading-relaxed">
-                            Hi, I&apos;m <strong>Hubboi</strong> — your ProjectHub assistant. I can search, query, create, and edit anything in your workspace. Just tell me what to do.
-                        </p>
-                        {/* Suggested prompt chips */}
-                        <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-                            {[
-                                "What are the tasks in my FitFlow project?",
-                                "Which project was about carbon emissions?",
-                                "Create a new task in ProjectHub called Set up CI pipeline",
-                                "Show me all high priority tasks across my projects",
-                            ].map((prompt) => (
-                                <button
-                                    key={prompt}
-                                    type="button"
-                                    onClick={() => setInput(prompt)}
-                                    className="bg-secondary/30 border border-white/10 hover:bg-secondary/50 hover:border-tertiary/30 text-lightgrey text-xs rounded-xl px-3 py-2 transition-colors cursor-pointer"
-                                >
-                                    {prompt}
-                                </button>
-                            ))}
-                        </div>
+                        {!userId ? (
+                            <>
+                                {/* Access Restricted */}
+                                <div className="bg-secondary/20 backdrop-blur-md p-10 rounded-4xl border border-white/10 max-w-2xl w-full text-center">
+                                    <div className="bg-red/20 text-red-400 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red/10 border border-red/30">
+                                        <span className="text-4xl leading-none">✦</span>
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-offwhite mb-3 tracking-tight">Access Restricted</h2>
+                                    <p className="text-lightgrey mb-8 text-lg">You must be signed in to use the AI assistant.</p>
+                                    <a href="/user/signin" className="inline-block px-8 py-4 bg-tertiary hover:opacity-90 text-offblack font-bold rounded-2xl transition-all shadow-lg shadow-tertiary/20">
+                                        Sign In Now
+                                    </a>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                {/* Icon */}
+                                <div className="w-16 h-16 rounded-2xl bg-tertiary/10 border border-tertiary/20 flex items-center justify-center">
+                                    <span className="text-2xl">✦</span>
+                                </div>
+                                {/* Intro message */}
+                                <p className="text-offwhite font-medium text-sm max-w-md leading-relaxed">
+                                    Hi, I&apos;m <strong>Hubboi</strong> — your ProjectHub assistant. I can search, query, create, and edit anything in your workspace. Just tell me what to do.
+                                </p>
+                                {/* Suggested prompt chips */}
+                                <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                                    {[
+                                        "What are the tasks in my FitFlow project?",
+                                        "Which project was about carbon emissions?",
+                                        "Create a new task in ProjectHub called Set up CI pipeline",
+                                        "Show me all high priority tasks across my projects",
+                                    ].map((prompt) => (
+                                        <button
+                                            key={prompt}
+                                            type="button"
+                                            onClick={() => setInput(prompt)}
+                                            className="bg-secondary/30 border border-white/10 hover:bg-secondary/50 hover:border-tertiary/30 text-lightgrey text-xs rounded-xl px-3 py-2 transition-colors cursor-pointer"
+                                        >
+                                            {prompt}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
                 {messages.map((msg, i) => (
@@ -563,11 +581,11 @@ export default function ChatBox({ userId }: { userId: string }) {
                                 handleSend()
                             }
                         }}
-                        placeholder={messages.length === 0 ? "Ask about your projects..." : "Reply..."}
+                        placeholder={!userId ? "Sign in to chat..." : messages.length === 0 ? "Ask about your projects..." : "Reply..."}
                         rows={1}
                         className="chatInputTextarea flex rounded-2xl px-4 pt-3 pb-2 mx-2 mt-2 bg-transparent text-offwhite placeholder:text-lightgrey/50 focus:outline-none text-sm font-medium resize-none overflow-y-auto leading-relaxed"
                         style={{ maxHeight: "320px" }}
-                        disabled={loading}
+                        disabled={loading || !userId}
                     />
 
                     {/* Right column: model selector, thinking toggle, send button */}
@@ -613,7 +631,7 @@ export default function ChatBox({ userId }: { userId: string }) {
                         {/* Send button */}
                         <button
                             onClick={handleSend}
-                            disabled={loading || !input.trim()}
+                            disabled={loading || !input.trim() || !userId}
                             className="px-6 py-3 bg-tertiary hover:opacity-90 text-offblack font-black rounded-2xl transition-all hover:scale-[1.03] active:scale-[0.97] disabled:opacity-40 disabled:scale-100 shadow-lg shadow-tertiary/20 text-sm"
                         >
                             {loading ? "..." : "Send"}
