@@ -52,8 +52,18 @@ export default function UserSigninPage() {
 
         setLoading(false);
 
-        if (res?.error) {
-            setResult({ type: "error", message: res.error });
+        if (!res) {
+            setResult({ type: "error", message: "Could not reach the server. Check your connection." });
+            return;
+        }
+
+        if (res.error) {
+            const errorMap: Record<string, string> = {
+                CredentialsSignin: "Invalid email or password.",
+                Configuration: "A server error occurred. Please try again later.",
+            };
+            const message = errorMap[res.error] ?? res.error;
+            setResult({ type: "error", message });
         }
         else {
             setResult({ type: "success", message: "Signed in! Redirecting to your projects..." });
